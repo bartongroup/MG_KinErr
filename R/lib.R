@@ -14,16 +14,18 @@ kinetochore <- function(side=c("L", "R"), MT=NULL, contact=NULL) {
 }
 
 # microtubule object constructor
-microtubule <- function(id, KT=NULL, contact=NULL) {
+microtubule <- function(id, spindle=c("L", "R"), KT=NULL, contact=NULL) {
   stopifnot(id%%1 == 0)
+  spindle <- match.arg(spindle)
   if(!is.null(KT)) stopifnot(KT %in% c("L", "R"))
   if(!is.null(contact)) stopifnot(contact %in% c("endon", "lateral"))
   obj <- list(
     id = as.integer(id),
+    spindle = spindle,
     KT = KT,
     contact = contact
   )
-  class(obj) <- append(class(obj), "kinetochore")
+  class(obj) <- append(class(obj), "microtubule")
   obj
 }
 
@@ -39,15 +41,15 @@ spindle <- function(side=c("L", "R"), MTs) {
 }
 
 
-# Object constructor
+# sisterChromatids object constructor
 sisterChromatids <- function() {
   KTs <- list(
     "L" = kinetochore("L", 1, "endon"),
     "R" = kinetochore("R", 2, "endon")
   )
   MTs <- list(
-    "1" = microtubule(1, "L", "endon"),
-    "2" = microtubule(2, "R", "endon")
+    "1" = microtubule(1, "L", "L", "endon"),
+    "2" = microtubule(2, "L", "R", "endon")
   )
   spindles <- list(
     "L" = spindle("L", c(1, 2)),
@@ -63,13 +65,30 @@ sisterChromatids <- function() {
 }
 
 
-attach.KT <- function(sc, MT.id, KT.side=c("L", "R"), contact=c("endon", "lateral")) {
+KT_state <- function(sc) {
+  state <- unlist(lapply(c("L", "R"), function(side) {
+    kt <- sc$KTs[[side]]
+    if(!is.null(kt$MT)) {
+      mt <- sc$MTs[[kt$MT]]
+      paste0(mt$spindle, "-", kt$contact)
+    } else {
+      "empty"
+    }
+  }))
+}
+
+
+attach_KT <- function(sc, MT.id, KT.side=c("L", "R"), contact=c("endon", "lateral")) {
   contact <- match.arg(contact)
   KT.side <- match.arg(KT.side)
   stopifnot(is(sc, "sisterChromatids"))
   stopifnot(MT.id%%1 == 0)
 
-  sc$MTs[[MT.id]] <- kinetochore(KT.side, MT.id, contact)
-  sc$KTs[[KT.side]] <- microtubule(MT.id, KT.side, contact)
+  if(is.null(sc$KTs[[KT.side]]$MT)) {
+    sc$MTs[[MT.id]] <- microtubule(MT.id, sc$MTs[[MT.id]]$spindle, KT.side, contact)
+    sc$KTs[[KT.side]] <- kinetochore(KT.side, MT.id, contact)
+  } else {
+    stop(paste("Error: attempted attachment to non-empty KT", KT.side))
+  }
   sc
 }
