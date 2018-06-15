@@ -1,0 +1,57 @@
+---
+title: "Kinetochore-microtubule error correction"
+subtitle: "Simple model"
+author: "Marek Gierlinski"
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+output:
+  html_document:
+    css: tabbed_notebook.css
+  pdf_document:
+    number_sections: yes
+---
+
+```{r options, echo=FALSE}
+knitr::opts_chunk$set(
+  warning = FALSE,
+  message = FALSE,
+  echo = TRUE,
+  cache = TRUE
+)
+options(width = 1000)
+options(knitr.table.format = "html")
+```
+
+```{css echo=FALSE}
+pre code, pre, code {
+  white-space: pre !important;
+  overflow-x: scroll !important;
+  word-break: keep-all !important;
+  word-wrap: initial !important;
+}
+```
+
+
+Collaborators: Tomo Tanaka
+
+[Proposal]()
+
+Notebooks: [1]()
+
+```{r setup, cache=FALSE, echo=FALSE}
+source("../R/setup.R")
+source("../R/lib.R")
+source("../R/plots.R")
+```
+
+# {.tabset}
+
+## Model
+
+There are two kinetochores, left and right. Each of them can be in one of the following attachment states:
+
+- none
+- lateral
+- endon
+- dual
+
+In addition to this, we store information about which spindle the KT is connected to (left or right).

@@ -11,26 +11,28 @@ theme_blank <- theme(axis.line=element_blank(),axis.text.x=element_blank(),
 
 
 plotSisterChromatids <- function(sc) {
+  Sides <- c("L", "R")
+  
   spndl <- data.frame(
     x = c(-1, 1),
     y = c(0.3, 0.3)
   )
-  rownames(spndl) <- c("L", "R")
+  rownames(spndl) <- Sides
   
   kts <- data.frame(
     x = c(-0.2, 0.2),
     y = c(0, 0)
   )
-  rownames(kts) <- c("L", "R")
+  rownames(kts) <- Sides
   
   mts <- list()
   id <- 1
-  for(sp in sc$spindles) {
-    p1 <- spndl[sp$side, ]
-    for(mt.id in sp$MTs) {
-      mt <- sc$MTs[[mt.id]]
-      p2 <- kts[mt$KT, ]
-      if(mt$contact == "lateral") p2 <- p2 + c(-p1$x * 0.05, -0.05)
+  for(side in Sides) {
+    KT <- sc$KT[[side]]
+    if(!is.null(KT$spindle)) {
+      p1 <- spndl[KT$spindle, ]
+      p2 <- kts[side, ]
+      if(KT$contact == "lateral") p2 <- p2 + c(-p1$x * 0.05, -0.05)
       p <- rbind(p1, p2)
       mts[[id]] <- p
       id <- id + 1

@@ -1,0 +1,31 @@
+---
+title: "Kinetochore-microtubule error correction"
+output:
+  html_notebook:
+    css: nice_notebook.css
+---
+
+
+```{r setup, include=FALSE}
+library(knitr)
+library(ggplot2)
+options(width = 100)
+
+opts_chunk$set(
+  warning=FALSE,
+  message=FALSE,
+  include=FALSE
+)
+```
+
+
+# 14/06/2018
+
+Thinking about how to build a model. Started with a perhaps over-complicated model with separate objects: spindles, microtubules and kinetochores.
+
+# 15/06/2018
+
+Finessing the model. Decided to simplify it. Now I only keep kinetochores, each of them in a different attachment states. Then there are rulses of transformation between states. There is no time step, event times are generted from the exponential distribution.
+
+Problems with the alternative model. Crashes on lateral attachment.
+
