@@ -168,13 +168,19 @@ simulationRuns <- function(model, par, nsim=1000) {
 ```
 
 ```{r simulation_time_run}
-T1 <- simulationRuns("independent", par)
-T2 <- simulationRuns("release", par) 
+T <- lapply(1:100, function(batch) {
+  file <- paste0(projectDir, "simruns/sim_defpar_", batch, ".txt")
+  if(file.exists(file)) {
+    return(read.delim(file, sep="\t", header=TRUE))
+  } else {
+    warning(paste("File", file, "not found."))
+  }
+})
+T <- do.call(rbind, T)
 ```
 
 ```{r simulation_time_plot, fig.width=6, fig.height=3}
-df <- rbind(T1, T2)
-ggplot(df, aes(time)) +
-  geom_histogram(bins=30) +
+ggplot(T, aes(time)) +
+  geom_histogram(bins=100) +
   facet_grid(. ~ model) 
 ```
