@@ -1,0 +1,10 @@
+rscript: "Rscript"
+
+nsim: 1000
+nbatch: 100 
+
+defpar: 
+  - 2
+  - 0.5
+  - 1
+  - 1e16
