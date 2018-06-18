@@ -14,7 +14,7 @@ output:
 knitr::opts_chunk$set(
   warning = FALSE,
   message = FALSE,
-  echo = TRUE,
+  echo = FALSE,
   cache = TRUE
 )
 options(width = 1000)
@@ -55,3 +55,125 @@ There are two kinetochores, left and right. Each of them can be in one of the fo
 - dual
 
 In addition to this, we store information about which spindle the KT is connected to (left or right).
+
+Transition between states are governed by a Poisson law. Each transition happens randomly a rate, $R$, expressed in events per minute.
+
+
+### Model 1: "independent"
+
+Here we assume that the end-on detachment and formation of the lateral attachment are independent. The sequence of events in this model is as follows:
+
+A lateral attachment is created at a rate $R_{\rm lat}$.
+
+```{r plot_lateral_attachement, fig.width=4, fig.height=2}
+par <- parametersRates(2, 0.5, 1)
+sc <- sisterChromatids(par, model="independent")
+sc <- formLateralAttachment(sc, "L", "L")
+plotSisterChromatids(sc)
+```
+
+Next, the lateral attachment is converted into the end-on attachment, at a rate $R_{\rm con}$:
+
+```{r plot_endon_attachement, fig.width=4, fig.height=2}
+sc <- convertAttachment(sc, "L")
+plotSisterChromatids(sc)
+```
+
+Finally, the end-on attachment is detached at a rate $R_{\rm det}$:
+
+```{r plot_detachment, fig.width=4, fig.height=2}
+sc <- detachKT(sc, "L")
+plotSisterChromatids(sc)
+```
+
+
+### Model 2: "release"
+
+In this model we assume that the end-on detachment happens only upon formation of the lateral attachment. This is the sequence of events. As before, we have an end-on attachment:
+
+```{r plot_endon_attachement_2, fig.width=4, fig.height=2}
+sc <- sisterChromatids(par, model="release")
+sc <- formLateralAttachment(sc, "L", "L")
+sc <- convertAttachment(sc, "L")
+plotSisterChromatids(sc)
+```
+
+Then, a lateral attachment can be created at the same KT, at a standard rate $R_{\rm lat}$. For a moment we have a "dual" attachment.
+
+```{r plot_dual_attachement, fig.width=4, fig.height=2}
+sc <- formDualAttachment(sc, "L", "L")
+plotSisterChromatids(sc)
+```
+
+which, in turn, leads to the end-on detachment:
+
+```{r plot_dual_detachment, fig.width=4, fig.height=2}
+sc <- detachKT(sc, "L")
+plotSisterChromatids(sc) 
+```
+
+The detachment from a dual state can happen either with no delay, or at a rate $R_{\rm del}$
+
+## Simulation
+
+We start in an error configuration, with both kinetochores connected to the same spindle:
+
+```{r initial_configuration, fig.width=4, fig.height=2}
+par <- parametersRates(2, 0.5, 1)
+sc <- sisterChromatids(par, model="independent")
+sc <- setErrorState(sc)
+plotSisterChromatids(sc)
+```
+
+### Model 1
+
+Here is an example of a simulation, showing the sequence of states for each kinetochore. The"L" or "R" in each state denotes the spindle to which the kinetochore is connected.
+
+```{r simulation_example}
+set.seed(102)
+sc <- simulate("independent")
+sc$state.history
+```
+
+The final configuration is the correct "endon-L endon-R". 
+
+```{r final_configuration, fig.width=4, fig.height=2}
+plotSisterChromatids(sc)
+```
+
+### Model 2
+
+Another example, this time for the "release" model.
+
+```{r simulation_example_release}
+set.seed(110)
+sc <- simulate("release")
+sc$state.history
+```
+
+### Simulation time
+
+```{r simulation_time_run_function}
+simulationRuns <- function(model, nsim=1000) {
+  T <- mclapply(1:nsim, function(i) {
+    sc <- simulate(model, verbose=FALSE)
+    sc$time
+  }, mc.cores = 6)
+  data.frame(
+    model = model,
+    time = unlist(T)
+  )
+} 
+```
+
+```{r simulation_time_run}
+T1 <- simulationRuns("independent")
+T2 <- simulationRuns("release") 
+```
+
+```{r simulation_time_plot, fig.width=6, fig.height=3}
+df <- rbind(T1, T2)
+ggplot(df, aes(time)) +
+  geom_histogram(bins=30) +
+  facet_grid(. ~ model) 
+```

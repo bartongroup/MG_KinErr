@@ -29,3 +29,7 @@ Finessing the model. Decided to simplify it. Now I only keep kinetochores, each 
 
 Problems with the alternative model. Crashes on lateral attachment.
 
+# 18/06/2018
+
+Writing document, creating figures. Developing the code and testing. There are issues. Needs more testing.
+
