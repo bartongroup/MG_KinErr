@@ -131,7 +131,7 @@ Here is an example of a simulation, showing the sequence of states for each kine
 
 ```{r simulation_example}
 set.seed(102)
-sc <- simulate("independent")
+sc <- simulate("independent", par)
 sc$state.history
 ```
 
@@ -147,16 +147,16 @@ Another example, this time for the "release" model.
 
 ```{r simulation_example_release}
 set.seed(110)
-sc <- simulate("release")
+sc <- simulate("release", par)
 sc$state.history
 ```
 
 ### Simulation time
 
 ```{r simulation_time_run_function}
-simulationRuns <- function(model, nsim=1000) {
+simulationRuns <- function(model, par, nsim=1000) {
   T <- mclapply(1:nsim, function(i) {
-    sc <- simulate(model, verbose=FALSE)
+    sc <- simulate(model, par, verbose=FALSE)
     sc$time
   }, mc.cores = 6)
   data.frame(
@@ -167,8 +167,8 @@ simulationRuns <- function(model, nsim=1000) {
 ```
 
 ```{r simulation_time_run}
-T1 <- simulationRuns("independent")
-T2 <- simulationRuns("release") 
+T1 <- simulationRuns("independent", par)
+T2 <- simulationRuns("release", par) 
 ```
 
 ```{r simulation_time_plot, fig.width=6, fig.height=3}

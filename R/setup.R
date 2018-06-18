@@ -3,6 +3,7 @@ library(ggplot2)
 library(gridExtra)
 library(kableExtra)
 library(parallel)
+library(methods)
 
 #qq.options(code.pattern = "\\$\\{CODE\\}")
 N <- function(n) prettyNum(n, big.mark = ",")

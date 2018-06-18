@@ -3,6 +3,7 @@ SIDES <- setNames(SIDES, SIDES)
 CONTACTS <- c("none", "lateral", "endon", "dual")
 EVENTS <- c("formation", "conversion", "detachment", "replacement")
 PARAMETERS <- c("formation", "conversion", "detachment", "delay")
+MODELS <- c("independent", "release")
 
 
 setParameterRate <- function(par, process, rate) {
@@ -328,8 +329,7 @@ finished <- function(sc) {
 }
 
 
-simulate <- function(model, verbose=FALSE) {
-  par <- parametersRates(2, 0.5, 1)
+simulate <- function(model, par, verbose=FALSE) {
   sc <- sisterChromatids(par, model=model)
   sc <- setErrorState(sc)
   sc <- initialEvents(sc)
