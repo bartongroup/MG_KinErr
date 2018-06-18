@@ -1,7 +1,4 @@
-library(knitr)
 library(ggplot2)
-library(gridExtra)
-library(kableExtra)
 library(parallel)
 library(methods)
 

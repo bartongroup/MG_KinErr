@@ -11,6 +11,7 @@ output:
 ---
 
 ```{r options, echo=FALSE}
+library(knitr)
 knitr::opts_chunk$set(
   warning = FALSE,
   message = FALSE,
