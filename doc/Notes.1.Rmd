@@ -33,3 +33,6 @@ Problems with the alternative model. Crashes on lateral attachment.
 
 Writing document, creating figures. Developing the code and testing. There are issues. Needs more testing.
 
+# 19/06/2018
+
+Testing model - extracting event duration data and comparing to input parameters. Creating snakemake file and running large-scale simulations on the cluster. Running model on a grid of parameters. Still needs testing. For example, detachment is a bit shorter than it should be.

@@ -42,6 +42,7 @@ Notebooks: [1]()
 source("../R/setup.R")
 source("../R/lib.R")
 source("../R/plots.R")
+source("../R/tests.R")
 ```
 
 # {.tabset}
@@ -64,7 +65,7 @@ Transition between states are governed by a Poisson law. Each transition happens
 
 Here we assume that the end-on detachment and formation of the lateral attachment are independent. The sequence of events in this model is as follows:
 
-A lateral attachment is created at a rate $R_{\rm lat}$.
+Let's start with an unattached microtubule. A lateral attachment is created at a rate $R_{\rm lat}$.
 
 ```{r plot_lateral_attachement, fig.width=4, fig.height=2}
 par <- parametersRates(2, 0.5, 1)
@@ -90,7 +91,7 @@ plotSisterChromatids(sc)
 
 ### Model 2: "release"
 
-In this model we assume that the end-on detachment happens only upon formation of the lateral attachment. This is the sequence of events. As before, we have an end-on attachment:
+In this model we assume that the end-on detachment happens only upon formation of the lateral attachment. This is the sequence of events. Now, we start with an end-on attachment:
 
 ```{r plot_endon_attachement_2, fig.width=4, fig.height=2}
 sc <- sisterChromatids(par, model="release")
@@ -106,14 +107,47 @@ sc <- formDualAttachment(sc, "L", "L")
 plotSisterChromatids(sc)
 ```
 
-which, in turn, leads to the end-on detachment:
+which, in turn, leads to the lateral attachment. Here we assume no delay, though a delay rate $R_{\rm del}$ can be introduced.
+
 
 ```{r plot_dual_detachment, fig.width=4, fig.height=2}
 sc <- detachKT(sc, "L")
 plotSisterChromatids(sc) 
 ```
 
-The detachment from a dual state can happen either with no delay, or at a rate $R_{\rm del}$
+As before, the lateral attachment is converted into end-on at a rate $R_{\rm con}$.
+
+```{r plot_endon_attachement_3, fig.width=4, fig.height=2}
+sc <- convertAttachment(sc, "L")
+plotSisterChromatids(sc)
+```
+
+## Tests
+
+We undertake a few simple tests to confirm that the model is working correctly. Specifically, we build the distribution of event duration over many simulation runs. The mean duration should be as in the input parameters. We set the following parameters: $R_{\rm lat} = 2~\rm{min}^{-1}$, $R_{\rm con} = 0.5~\rm{min}^{-1}$ and $R_{\rm det} = 1~\rm{min}^{-1}$. We keep large $R_{\rm del} = 10^{16}~\rm{min}^{-1}$, which corresponds to no delay.
+
+```{r simulation_test_read}
+load(paste0(projectDir, "data/simtest.RData"))
+```
+
+Here are results for "independent" model:
+
+```{r simulation_test_results_independent}
+tapply(simtest1$duration, simtest1$event, mean) 
+```
+
+and for the "release" model:
+
+```{r simulation_test_results_release}
+tapply(simtest2$duration, simtest2$event, mean) 
+```
+
+They are reasonably close to the input parameters. In the second test the "detachment" is very short: this corresponds to infinitesimal delay of detachment after lateral attachment. When we set a delay in detachment at a rate of 1 per minute, we get:
+
+```{r simulation_test_results_release2}
+tapply(simtest3$duration, simtest3$event, mean)
+```
+
 
 ## Simulation
 
@@ -152,35 +186,67 @@ sc <- simulate("release", par)
 sc$state.history
 ```
 
-### Simulation time
+## Results
 
-```{r simulation_time_run_function}
-simulationRuns <- function(model, par, nsim=1000) {
-  T <- mclapply(1:nsim, function(i) {
-    sc <- simulate(model, par, verbose=FALSE)
-    sc$time
-  }, mc.cores = 6)
-  data.frame(
-    model = model,
-    time = unlist(T)
-  )
-} 
-```
+### Default parameters
 
-```{r simulation_time_run}
-T <- lapply(1:100, function(batch) {
-  file <- paste0(projectDir, "simruns/sim_defpar_", batch, ".txt")
-  if(file.exists(file)) {
-    return(read.delim(file, sep="\t", header=TRUE))
-  } else {
-    warning(paste("File", file, "not found."))
-  }
-})
-T <- do.call(rbind, T)
+Here is the distribution of simulation time for default parameters.
+
+```{r read_def_sims}
+defsims <- readRDS(paste0(projectDir, "data/sim_defpar.rds"))
 ```
 
 ```{r simulation_time_plot, fig.width=6, fig.height=3}
-ggplot(T, aes(time)) +
+ggplot(defsims, aes(time)) +
   geom_histogram(bins=100) +
-  facet_grid(. ~ model) 
+  facet_grid(. ~ model) +
+  xlim(0, 100)
 ```
+
+Here is the mean and median simulation time for both models:
+
+```{r simulation_median_time}
+M <- lapply(c("mean", "median"), function(fun) {
+  t <- t(as.matrix(tapply(defsims$time, defsims$model, fun)))
+  rownames(t) <- fun
+  round(t, 2)
+})
+do.call(rbind, M) 
+```
+
+### Grid of parameters
+
+```{r read_all_sims}
+allsims <- readRDS(paste0(projectDir, "data/sim_allpar.rds"))
+```
+
+```{r all_sims_mean}
+allsim.means <- allsims %>% group_by(model, formation, conversion, detachment) %>% summarise(mean.time = mean(time), n=n()) %>% as.data.frame
+allsim.means <- allsim.means[order(allsim.means$mean.time), ]
+```
+
+We run the simulation across a grid of parameters.
+
+```{r parameter_grid}
+parnames <- c("formation", "conversion", "detachment")
+P <- setNames(lapply(parnames, function(p) {
+  unique(allsim.means[, p])
+}), parnames)
+str(P)
+```
+
+Simply, we start from the default values and vary each parameter by factor two, up and down. This gives us $2 \times 3^3 = 27$ parameter sets for two models. For each set we run 100,000 simulations. The table below shows 20 shortest times. We notice that the simualation time depends almost exclusively on the conversion rate, $r_\rm{con}$.
+
+```{r all_sims_show_mean}
+head(allsim.means, 20)
+```
+
+We can build a linear model to show this.
+
+```{r all_sims_linear_model}
+fit <- lm(mean.time ~ model + formation + conversion + detachment, data=allsim.means)
+fit$call
+anova(fit)
+```
+
+Indeed, only conversion rate is important.
