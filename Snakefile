@@ -17,8 +17,17 @@ def_del = defpar[3]
 rule all:
     input: 
       expand("simruns/sim_defpar_{batch}.txt", batch=BATCHES),
+      "data/simtest.RData"
 
 
+####################################################################
+
+rule sim_test:
+    output: "data/simtest.RData"
+    threads: 8
+    log: "logs/sim_test.txt"
+    shell:
+        "{rscript} Rscript/model_test.R 1000 {threads} {output} &> log"
 
 ####################################################################
 
