@@ -329,13 +329,13 @@ finished <- function(sc) {
 }
 
 
-simulate <- function(model, par, verbose=FALSE) {
+simulate <- function(model, par, verbose=FALSE, max.iter=1000) {
   sc <- sisterChromatids(par, model=model)
   sc <- setErrorState(sc)
   sc <- initialEvents(sc)
   
   if(verbose) cat(getStatus(sc), "\n")
-  for(i in 1:1000) {
+  for(i in 1:max.iter) {
     sc <- executeEvent(sc)
     sc <- nextEvent(sc)
     if(verbose) cat(getStatus(sc), "\n")
