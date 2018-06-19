@@ -1,4 +1,6 @@
-# merge simulation output files
+# merge simulation output files into one rds file
+# Usage:
+#    Rscript merge_sims.R <input_files> <output_file>
 
 args <- commandArgs(TRUE)
 n <- length(args)

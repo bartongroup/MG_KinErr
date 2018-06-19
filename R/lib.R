@@ -198,31 +198,34 @@ generateTime <- function(event, par) {
 
 
 # generate next event for agiven KT
-generateEvent <- function(KT, par, model) {
-  stopifnot(is(KT, "kinetochore"))
-  stopifnot(is(par, "parameters"))
-  stopifnot(KT$contact %in% CONTACTS)
+generateEvent <- function(sc, side) {
+  KT <- sc$KT[[side]]
+  par <- sc$parameters
   
   # no attachment: form lateral attachment
   if(KT$contact == "none") {
     ev <- "formation"
-    t <- KT$time[["detachment"]] + generateTime("formation", par)
+    #t <- KT$time[["detachment"]] + generateTime("formation", par)
+    t <- sc$time + generateTime("formation", par)
   } 
   
   # lateral attachment: conversion
   else if (KT$contact == "lateral") {
     ev <- "conversion"
-    t <- KT$time[["formation"]] + generateTime("conversion", par)
+    #t <- KT$time[["formation"]] + generateTime("conversion", par)
+    t <- sc$time + generateTime("conversion", par)
   }
   
   # end-on attachment: detach or replace
   else if (KT$contact == "endon") {
-    if(model == "independent") {
+    if(sc$model == "independent") {
       ev <- "detachment"
-      t <- KT$time[["conversion"]] + generateTime("detachment", par)
-    } else if(model == "release") {
+      #t <- KT$time[["conversion"]] + generateTime("detachment", par)
+      t <- sc$time + generateTime("detachment", par)
+    } else if(sc$model == "release") {
       ev <- "replacement"
-      t <- KT$time[["conversion"]] + generateTime("formation", par)
+      #t <- KT$time[["conversion"]] + generateTime("formation", par)
+      t <- sc$time + generateTime("formation", par)
     } else {
       stop("Unknown model")
     }
@@ -233,11 +236,12 @@ generateEvent <- function(KT, par, model) {
   # this corresponds to formation of new lateral
   else if (KT$contact == "dual") {
     ev <- "detachment"
-    t <- KT$time[["replacement"]] + generateTime("delay", par)
+    #t <- KT$time[["replacement"]] + generateTime("delay", par)
+    t <- sc$time + generateTime("delay", par)
   }
   
   data.frame(
-    KT.side = KT$side,
+    KT.side = side,
     spindle = KT$spindle,
     event = ev,
     time = t,
@@ -248,12 +252,13 @@ generateEvent <- function(KT, par, model) {
 
 initialEvents <- function(sc) {
   P <- lapply(SIDES, function(side) {
-    d <- generateEvent(sc$KT[[side]], sc$parameters, sc$model)
+    d <- generateEvent(sc, side)
   })
   df <- do.call(rbind, P)
   df <- df[order(df$time), ]
   rownames(df) <- NULL
   sc$events <- df
+  sc$state.history <- getStatus(sc, "data.frame")
   sc
 }
 
@@ -311,7 +316,8 @@ nextEvent <- function(sc) {
   if(nrow(sc$events) == 1) {
     side <- sc$events[1, "KT.side"]
     other.side <- ifelse(side == "L", "R", "L")
-    df <- generateEvent(sc$KT[[other.side]], sc$parameters, sc$model)
+    df <- generateEvent(sc, other.side)
+    #df <- generateEvent(sc$KT[[other.side]], sc$parameters, sc$model)
     ev <- rbind(sc$events, df)
     ev <- ev[order(ev$time), ]
     sc$events <- ev
