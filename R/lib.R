@@ -335,7 +335,7 @@ simulate <- function(model, par, verbose=FALSE) {
   sc <- initialEvents(sc)
   
   if(verbose) cat(getStatus(sc), "\n")
-  for(i in 1:100) {
+  for(i in 1:1000) {
     sc <- executeEvent(sc)
     sc <- nextEvent(sc)
     if(verbose) cat(getStatus(sc), "\n")
