@@ -78,7 +78,7 @@ formLateralAttachment <- function(sc, side, spindle=NULL) {
   if(KT$contact == "none") {
     KT$spindle <- spindle
     KT$contact <- "lateral"
-    KT$time[["formation"]] <- sc$time
+    #KT$time[["formation"]] <- sc$time
     sc$KT[[side]] <- KT
   } else {
     stop(paste("Attempt to form lateral attachment on", KT$contact, "contact"))
@@ -98,7 +98,7 @@ formDualAttachment <- function(sc, side, spindle=NULL) {
     KT$contact <- "dual"
     KT$dual.spindle <- KT$spindle
     KT$spindle <- spindle
-    KT$time[["replacement"]] <- sc$time
+    #KT$time[["replacement"]] <- sc$time
     sc$KT[[side]] <- KT
   } else {
     stop(paste("Attempt to form dual attachment on", KT$contact, "contact"))
@@ -111,7 +111,7 @@ convertAttachment <- function(sc, side) {
   KT <- sc$KT[[side]]
   if(KT$contact == "lateral") {
     KT$contact <- "endon"
-    KT$time[["conversion"]] <- sc$time
+    #KT$time[["conversion"]] <- sc$time
     sc$KT[[side]] <- KT
   } else {
     stop(paste("Attempt to convert", KT$contact, "attachment on", side))
@@ -129,14 +129,14 @@ detachKT <- function(sc, side) {
   if(KT$contact == "endon") {
     KT$contact <- "none"
     KT$spindle <- "none"
-    KT$time[["detachment"]] <- sc$time
+    #KT$time[["detachment"]] <- sc$time
     sc$KT[[side]] <- KT
   }
   
   # dual state: detachment is like lateral formation
   else if (KT$contact == "dual") {
     KT$contact <- "lateral"
-    KT$time[["formation"]] <- sc$time
+    #KT$time[["formation"]] <- sc$time
     sc$KT[[side]] <- KT
   }
 
@@ -160,7 +160,7 @@ setErrorState <- function(sc) {
 }
 
 
-
+# return current state of the system in a simple string or data frame
 getStatus <- function(sc, return="string") {
   p <- unlist(lapply(SIDES, function(side) {
     KT <- sc$KT[[side]]
@@ -178,7 +178,7 @@ getStatus <- function(sc, return="string") {
 }
 
 
-# generate event time from parameters
+# generate random event time from parameters
 # these can be either Poisson rates, or Gaussian mean and sd
 generateTime <- function(event, par) {
   stopifnot(event %in% names(par))
@@ -186,46 +186,56 @@ generateTime <- function(event, par) {
   type <- p$type
   val <- p$value
   
+  # Poisson model with exponential distirbution, there is only one parameter:
+  # rate
   if(type == "rate") {
     time <- rexp(1, rate = val$rate)
-  } else if (type == "gaussian") {
+  }
+  
+  # Gaussian model wiht mean and standard deviation
+  else if (type == "gaussian") {
     time <- rnorm(1, mean = val$mean, sd = val$sd)
-  } else {
+  }
+  
+  else {
     stop(paste("Unknown parameter type", type))
   }
   time
 }
 
 
-# generate next event for agiven KT
+# Generate next event for agiven KT. Returns a data frame with event type, its
+# time and a few other things.
+#
+# This function has to be called upon execution of the previous event. It uses
+# current time to generate the time of the next event.
 generateEvent <- function(sc, side) {
+  # extracting value from a list takes a while, so do it once
   KT <- sc$KT[[side]]
+  contact <- KT$contact
   par <- sc$parameters
+  model <- sc$model
   
   # no attachment: form lateral attachment
-  if(KT$contact == "none") {
+  if(contact == "none") {
     ev <- "formation"
-    #t <- KT$time[["detachment"]] + generateTime("formation", par)
-    t <- sc$time + generateTime("formation", par)
+    dt <- generateTime("formation", par)
   } 
   
   # lateral attachment: conversion
-  else if (KT$contact == "lateral") {
+  else if (contact == "lateral") {
     ev <- "conversion"
-    #t <- KT$time[["formation"]] + generateTime("conversion", par)
-    t <- sc$time + generateTime("conversion", par)
+    dt <- generateTime("conversion", par)
   }
   
   # end-on attachment: detach or replace
-  else if (KT$contact == "endon") {
-    if(sc$model == "independent") {
+  else if (contact == "endon") {
+    if(model == "independent") {
       ev <- "detachment"
-      #t <- KT$time[["conversion"]] + generateTime("detachment", par)
-      t <- sc$time + generateTime("detachment", par)
-    } else if(sc$model == "release") {
+      dt <- generateTime("detachment", par)
+    } else if(model == "release") {
       ev <- "replacement"
-      #t <- KT$time[["conversion"]] + generateTime("formation", par)
-      t <- sc$time + generateTime("formation", par)
+      dt <- generateTime("formation", par)
     } else {
       stop("Unknown model")
     }
@@ -234,17 +244,16 @@ generateEvent <- function(sc, side) {
   # dual attachment following replacement
   # remove end-on, detach end-on, leave lateral
   # this corresponds to formation of new lateral
-  else if (KT$contact == "dual") {
+  else if (contact == "dual") {
     ev <- "detachment"
-    #t <- KT$time[["replacement"]] + generateTime("delay", par)
-    t <- sc$time + generateTime("delay", par)
+    dt <- generateTime("delay", par)
   }
   
   data.frame(
     KT.side = side,
     spindle = KT$spindle,
     event = ev,
-    time = t,
+    time = sc$time + dt,
     stringsAsFactors = FALSE
   )  
 }
@@ -269,6 +278,11 @@ executeEvent <- function(sc) {
   ev <- sc$events[1, ]
   sc$events <- sc$events[2:nrow(sc$events),]
   
+  # extracting value from list takes a while, so do it once
+  event <- ev$event
+  KT.side <- ev$KT.side
+  stopifnot(event %in% EVENTS)
+  
   # set sc time to event time
   sc$time <- ev$time
   
@@ -277,27 +291,27 @@ executeEvent <- function(sc) {
   rownames(sc$event.history) <- NULL
   
   # formation: form new lateral attachment
-  if(ev$event == "formation") {
-    sc <- formLateralAttachment(sc, ev$KT.side)
+  if(event == "formation") {
+    sc <- formLateralAttachment(sc, KT.side)
   }
   
   # convertion: convert lateral to end-on
-  else if(ev$event == "conversion") {
-    sc <- convertAttachment(sc, ev$KT.side)
+  else if(event == "conversion") {
+    sc <- convertAttachment(sc, KT.side)
   }
   
   # detachment: detach end-on attachment
-  else if(ev$event == "detachment") {
-    sc <- detachKT(sc, ev$KT.side)
+  else if(event == "detachment") {
+    sc <- detachKT(sc, KT.side)
   }
   
   # replacement: replace end-on with dual
-  else if(ev$event == "replacement") {
-    sc <- formDualAttachment(sc, ev$KT.side)
+  else if(event == "replacement") {
+    sc <- formDualAttachment(sc, KT.side)
   }
   
   else {
-    stop(paste("Unrecognized event", ev$KT.event))
+    stop(paste("Unrecognized event", KT.event))
   }
   
   # update state history
@@ -317,7 +331,6 @@ nextEvent <- function(sc) {
     side <- sc$events[1, "KT.side"]
     other.side <- ifelse(side == "L", "R", "L")
     df <- generateEvent(sc, other.side)
-    #df <- generateEvent(sc$KT[[other.side]], sc$parameters, sc$model)
     ev <- rbind(sc$events, df)
     ev <- ev[order(ev$time), ]
     sc$events <- ev
