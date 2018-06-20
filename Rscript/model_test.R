@@ -5,14 +5,20 @@ source("R/lib.R")
 source("R/tests.R")
 
 args <- commandArgs(TRUE)
-nsim <- as.numeric(args[1])
-ncores <- as.numeric(args[2])
-outfile <- args[3]
+code <- as.numeric(args[1])
+nsim <- as.numeric(args[2])
+ncores <- as.numeric(args[3])
+outfile <- args[4]
 
-par <- parametersRates(2, 0.5, 1, 1e16)
-simtest1 <- simulateDuration("independent", par, nsim=nsim, ncores=ncores)
-simtest2 <- simulateDuration("release", par, nsim=nsim, ncores=ncores)
-par2 <- parametersRates(2, 0.5, 1, 1)
-simtest3 <- simulateDuration("release", par2, nsim=nsim, ncores=ncores)
+if(code == 1) {
+  par <- parametersRates(2, 0.5, 1, 1e16)
+  simtest <- simulateDuration("independent", par, nsim=nsim, ncores=ncores)
+} else if(code == 2) {
+  par <- parametersRates(2, 0.5, 1, 1e16)
+  simtest <- simulateDuration("release", par, nsim=nsim, ncores=ncores)
+} else if(code == 3) {
+  par <- parametersRates(2, 0.5, 1, 1)
+  simtest <- simulateDuration("release", par, nsim=nsim, ncores=ncores)
+}
 
-save(simtest1, simtest2, simtest3, file=outfile)
+saveRDS(simtest, file=outfile)
