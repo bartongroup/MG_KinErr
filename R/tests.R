@@ -29,3 +29,25 @@ simulateDuration <- function(model, par, nsim=1000, ncores=6) {
   }
   do.call(rbind, D)
 }
+
+
+plotDurationDistribution <- function(res, par, binwidth=0.05, xmax=5) {
+  breaks <- seq(0, xmax, binwidth)
+  res$event <- as.character(res$event)
+
+  x <- seq(0, 30, 0.01)
+  mod <- lapply(as.character(unique(res$event)), function(ev) {
+    rate <- par[[ev]]$value$rate
+    y <- rate * exp(-rate * x)
+    data.frame(event=ev, x=x, y=y)
+  })
+  mod <- do.call(rbind, mod)
+  
+  ggplot() +
+    theme_classic() +
+    geom_histogram(data=res, aes(x=duration, y=..density..), breaks=breaks) +
+    geom_line(data=mod, aes(x, y), colour="red") +
+    #facet_grid(event ~ ., scales = "free") +
+    facet_wrap(~event, scales="free", ncol=3) +
+    coord_cartesian(xlim=c(0, xmax))
+}
