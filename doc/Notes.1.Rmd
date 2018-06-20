@@ -36,3 +36,19 @@ Writing document, creating figures. Developing the code and testing. There are i
 # 19/06/2018
 
 Testing model - extracting event duration data and comparing to input parameters. Creating snakemake file and running large-scale simulations on the cluster. Running model on a grid of parameters. Still needs testing. For example, detachment is a bit shorter than it should be.
+
+# 20/06/2018
+
+Doing some code tweaking. Discovered package "microbenchmark". Very usesful. For example, it turns out tests like
+
+```
+stopifnot(side %in% SIDES)
+stopifnot(KT$contact %in% CONTACTS)
+```
+
+that I have in some of the functions increase execution time of the entire function by factor two! Commenting them out. Also accessing a field in object (e.g. `KT$contact`) takes time. So, if I have `if(KT$contact == ...)` multiple times, it is faster to create a new variable `contact` and test it.
+
+Tests look fine, though, for some reason, detachment is a bit faster in simulations that it should be. It's a tiny difference, but there is one. Creating plots of test distributions.
+
+Since there is very little dependence on formation and detachment rate, I decided to widen the range of parameters. To avoide huge calculations and huge objects, I reduced the number of simulations from 100,000 to 10,000 per set of parameters. This should be enough for mean or median time.
+
