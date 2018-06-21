@@ -6,13 +6,12 @@ eventDurationDistribution <- function(sc) {
       h$dt <- h$time - c(0, h$time[1:(nrow(h) - 1)])
       # internal consistency check
       if(sum((h$dt - h$duration)^2) > 1e-16) stop("Duration disagreement")
-      return(tapply(h$dt, h$event, identity, simplify=FALSE))
+      h[, c("KT.side", "event", "duration")]
     } else {
       return(NULL)
     }
   })
-  keys <- unique(c(names(d$L), names(d$R)))
-  setNames(lapply(keys, function(key) c(d$L[[key]], d$R[[key]])), keys)
+  do.call(rbind, d)
 }
 
 
@@ -21,15 +20,9 @@ simulateDuration <- function(model, par, nsim=1000, ncores=6) {
     sc <- simulate(model, par)
     d <- eventDurationDistribution(sc)
   }, mc.cores = ncores)
-  
-  D <- list()
-  for(i in 1:nsim) {
-    d <- res[[i]]
-    for(k in names(d)) {
-      D[[paste0(i, k)]] <- data.frame(event=k, duration=d[[k]])
-    }
-  }
-  do.call(rbind, D)
+  res <- do.call(rbind, res)
+  rownames(res) <- NULL
+  res
 }
 
 
