@@ -257,13 +257,15 @@ generateEvent <- function(sc, side) {
     stop(paste("Unrecognized contact", contact, "in generateEvent."))
   }
   
-  time <- sc$time + generateTime(event, sc$parameters)
-  
+  duration <- generateTime(event, sc$parameters)
+  time <- sc$time + duration
+
   data.frame(
     KT.side = side,
     spindle = KT$spindle,
     event = event,
     time = time,
+    duration = duration,
     stringsAsFactors = FALSE
   )  
 }

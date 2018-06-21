@@ -3,8 +3,10 @@ eventDurationDistribution <- function(sc) {
     h <- sc$event.history
     h <- h[h$KT.side == side,, drop=FALSE]
     if(nrow(h) > 0) {
-      h$duration <- h$time - c(0, h$time[1:(nrow(h) - 1)])
-      return(tapply(h$duration, h$event, identity, simplify=FALSE))
+      h$dt <- h$time - c(0, h$time[1:(nrow(h) - 1)])
+      # internal consistency check
+      if(sum((h$dt - h$duration)^2) > 1e-16) stop("Duration disagreement")
+      return(tapply(h$dt, h$event, identity, simplify=FALSE))
     } else {
       return(NULL)
     }
