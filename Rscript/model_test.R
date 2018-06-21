@@ -8,8 +8,11 @@ args <- commandArgs(TRUE)
 code <- as.numeric(args[1])
 nsim <- as.numeric(args[2])
 ncores <- as.numeric(args[3])
-outfile <- args[4]
+seed <- as.integer(args[4])
+outfile <- args[5]
 
+
+set.seed(seed)
 if(code == 1) {
   par <- parametersRates(2, 0.5, 1, 1e16)
   simtest <- simulateDuration("independent", par, nsim=nsim, ncores=ncores)
