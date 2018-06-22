@@ -1,6 +1,10 @@
 # Stand-alone script to run a batch of simulations
 # Usage:
-#   Rscript Rscript/simbatch.R form_rate conv_rate det_rate delay nsim ncores outfile
+#   Rscript Rscript/simbatch.R model par1 par2 par3 par4 nsim ncores outfile
+# where parameters depend on the model:
+# M1: formation_rate conversion_rate detachment_rate dummy
+# M2: replacement_rate knockoff_rate conversion_rate dummy
+
 
 source("R/setup.R")
 source("R/lib.R")
@@ -22,19 +26,23 @@ simulationRuns <- function(model, par, nsim, ncores) {
 
 args <- commandArgs(TRUE)
 
-form_rate <- as.numeric(args[1])
-conv_rate <- as.numeric(args[2])
-det_rate <- as.numeric(args[3])
-del_rate <- as.numeric(args[4])
-nsim <- as.numeric(args[5])
-ncores <- as.numeric(args[6])
-outfile <- args[7]
+model <- args[1]
+par1 <- as.numeric(args[2])
+par2 <- as.numeric(args[3])
+par3 <- as.numeric(args[4])
+par4 <- as.numeric(args[5])
+nsim <- as.numeric(args[6])
+ncores <- as.numeric(args[7])
+outfile <- args[8]
 
-par <- parametersRates(form_rate, conv_rate, det_rate, del_rate)
-
-P <- lapply(MODELS, function(model) {
-  simulationRuns(model, par, nsim, ncores)
-})
-df <- do.call(rbind, P)
+if(model == "M1") {
+  par <- parametersRates(formation=par1, conversion=par2, detachment=par3)
+} else if(model == "M2") {
+  par <- parametersRates(replacement=par1, knockoff=par2, conversion=par3)
+} else {
+  stop("Wrong model.")
+}
+ 
+df <- simulationRuns(model, par, nsim, ncores)
 
 write.table(df, file=outfile, quote=FALSE, sep="\t", row.names=FALSE, col.names=TRUE)
