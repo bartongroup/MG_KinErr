@@ -18,8 +18,8 @@ setParameterRate <- function(par, process, rate) {
 }
 
 # parameters object constructor
-parametersRates <- function(formation, conversion, detachment, knockoff=1e16) {
-  for(r in c(formation, conversion, detachment, knockoff)) {
+parametersRates <- function(formation=2, conversion=0.5, detachment=1, replacement=2, knockoff=1e16) {
+  for(r in c(formation, conversion, detachment, replacement, knockoff)) {
     stopifnot(is.numeric(r) && r > 0)
   }
   p <- list()
@@ -27,8 +27,7 @@ parametersRates <- function(formation, conversion, detachment, knockoff=1e16) {
   p <- setParameterRate(p, "conversion", conversion)
   p <- setParameterRate(p, "detachment", detachment)
   p <- setParameterRate(p, "knockoff", knockoff)
-  # replacement is the same as formation
-  p <- setParameterRate(p, "replacement", formation)
+  p <- setParameterRate(p, "replacement", replacement)
   class(p) <- append(class(p), "parameters")
   p
 }
