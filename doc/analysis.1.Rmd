@@ -129,21 +129,21 @@ sc <- sisterChromatids(par, model="M1")
 plotSisterChromatids(sc)
 ```
 
-A lateral attachment is created at a rate $R_\mathrm{form}$.
+A lateral attachment is created at formation rate $R_\mathrm{form}$.
 
 ```{r plot_emplty_sc, fig.width=4, fig.height=2}
 sc <- formLateralAttachment(sc, "L", "L")
 plotSisterChromatids(sc)
 ```
 
-Next, the lateral attachment is converted into the end-on attachment, at a rate $R_\mathrm{conv}$:
+Next, the lateral attachment is converted into the end-on attachment, at conversion rate $R_\mathrm{conv}$:
 
 ```{r plot_endon_attachement, fig.width=4, fig.height=2}
 sc <- convertAttachment(sc, "L")
 plotSisterChromatids(sc)
 ```
 
-Finally, the microtubule is detached at a rate $R_\mathrm{det}$:
+Finally, the microtubule is detached at detachemnt rate $R_\mathrm{det}$:
 
 ```{r plot_detachment, fig.width=4, fig.height=2}
 sc <- detachKT(sc, "L")
@@ -163,7 +163,7 @@ sc <- convertAttachment(sc, "L")
 plotSisterChromatids(sc)
 ```
 
-Then, a lateral attachment can be created at the same KT, at a rate $R_\mathrm{rep}$. This is the same process as "formation" in model 1, but we call it "replacement" here, for distinction. For a moment we have a "dual" attachment.
+Then, a lateral attachment can be created at the same KT, at replacement rate $R_\mathrm{rep}$. This is the same process as "formation" in model 1, but we call it "replacement" here, for distinction. For a moment we have a "dual" attachment.
 
 ```{r plot_dual_attachement, fig.width=4, fig.height=2}
 sc <- formDualAttachment(sc, "L", "L")
@@ -177,7 +177,7 @@ sc <- knockoffKT(sc, "L")
 plotSisterChromatids(sc) 
 ```
 
-As before, the lateral attachment is converted into end-on at a rate $R_\mathrm{conv}$.
+As before, the lateral attachment is converted into end-on at conversion rate $R_\mathrm{conv}$.
 
 ```{r plot_endon_attachement_3, fig.width=4, fig.height=2}
 sc <- convertAttachment(sc, "L")
