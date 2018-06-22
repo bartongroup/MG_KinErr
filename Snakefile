@@ -8,10 +8,10 @@ test_seed = 52346
 
 # Default model parameters
 
-def_form = 2
-def_conv = 0.5
+def_form = 0.5
+def_conv = 2
 def_det = 1
-def_rep = 2
+def_rep = 0.5
 def_ko = 1e16
 
 # Ranges of values
@@ -21,10 +21,10 @@ TESTS = [1, 2, 3]
 BATCHES = range(1, nbatch+1)
 GBATCHES = range(1, grid_nbatch+1)
 
-FORMS = [0.5, 1, 2, 4, 8]
-CONVS = [0.125, 0.25, 0.5, 1, 2]
+FORMS = [0.125, 0.25, 0.5, 1, 2]
+CONVS = [0.5, 1, 2, 4, 8]
 DETS = [0.25, 0.5, 1, 2, 4]
-REPS = [0.5, 1, 2, 4, 8] # replacement is the same process as formation
+REPS = [0.125, 0.25, 0.5, 1, 2] # replacement is the same process as formation
 KOS = [1e16, 0.5, 1, 2]
 
 
