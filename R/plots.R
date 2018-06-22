@@ -69,3 +69,39 @@ plotSisterChromatids <- function(sc, dx=0.1, dy=0.08) {
   
   g
 }
+
+
+
+plotStateHistory <- function(sc, max.time=NULL) {
+  Sides <- c("L", "R")
+  sy <- list(L = 1, R = 2)
+  dy <- c(L = -0.4, R = 0.4, none=0)
+  
+  sh <- sc$state.history
+  sh <- sh[sh$state != "none",]
+  sh <- droplevels(sh)
+  sh$state <- factor(sh$state, levels=c("endon", "lateral", "dual"))
+  if(is.null(max.time)) max.time <- max(sh$end)
+  
+  g <- ggplot() +
+    theme_classic() +
+    theme(panel.background = element_rect(fill="grey90"), axis.line = element_blank()) +
+    scale_y_continuous(breaks = 1:2, labels=c("L", "R")) +
+    xlim(0, max.time) +
+    scale_fill_manual(values=cbPalette) +
+    labs(x="Time (min)", y="Kinetochore")
+  
+  for(side in Sides) {
+    s <- sh[sh$KT.side == side, ]
+    df <- data.frame(
+      xmin = s$start,
+      xmax = s$end,
+      ymin = sy[[side]],
+      ymax = sy[[side]] + dy[as.character(s$spindle)],
+      state = s$state
+    )
+    g <- g + geom_rect(data=df, aes(xmin=xmin, xmax=xmax, ymin=ymin, ymax=ymax, fill=state), colour="black", alpha=0.8)
+  }
+  g <- g + geom_hline(yintercept = c(1,2))
+  g
+}

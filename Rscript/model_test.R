@@ -15,13 +15,13 @@ outfile <- args[5]
 set.seed(seed)
 if(code == 1) {
   par <- parametersRates(2, 0.5, 1, 1e16)
-  simtest <- simulateDuration("independent", par, nsim=nsim, ncores=ncores)
+  simtest <- simulateDuration("M1", par, nsim=nsim, ncores=ncores)
 } else if(code == 2) {
   par <- parametersRates(2, 0.5, 1, 1e16)
-  simtest <- simulateDuration("release", par, nsim=nsim, ncores=ncores)
+  simtest <- simulateDuration("M2", par, nsim=nsim, ncores=ncores)
 } else if(code == 3) {
   par <- parametersRates(2, 0.5, 1, 1)
-  simtest <- simulateDuration("release", par, nsim=nsim, ncores=ncores)
+  simtest <- simulateDuration("M2", par, nsim=nsim, ncores=ncores)
 }
 
 saveRDS(simtest, file=outfile)

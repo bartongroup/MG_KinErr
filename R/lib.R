@@ -3,7 +3,7 @@ SIDES <- setNames(SIDES, SIDES)
 CONTACTS <- c("none", "lateral", "endon", "dual")
 EVENTS <- c("formation", "conversion", "detachment", "knockoff", "replacement")
 PARAMETERS <- c("formation", "conversion", "detachment", "knockoff", "replacement")
-MODELS <- c("independent", "release")
+MODELS <- c("M1", "M2")
 DEBUG <- FALSE
 
 setParameterRate <- function(par, process, rate) {
@@ -41,10 +41,7 @@ kinetochore <- function(side) {
     spindle = "none",
     dual.spindle = "none",
     contact = "none",
-    time = setNames(
-      c(NA, NA, 0, NA), 
-      c("formation", "conversion", "detachment", "replacement")
-    )
+    event.time = 0
   )
   class(obj) <- append(class(obj), "kinetochore")
   obj
@@ -52,8 +49,8 @@ kinetochore <- function(side) {
 
 
 # main object constructor
-sisterChromatids <- function(par, time=0, model=c("independent", "release")) {
-  model <- match.arg(model)
+sisterChromatids <- function(par, time=0, model) {
+  stopifnot(model %in% MODELS)
   stopifnot(is(par, "parameters"))
   KT <- lapply(SIDES, function(s) kinetochore(s))
   sc <- list(
@@ -63,7 +60,8 @@ sisterChromatids <- function(par, time=0, model=c("independent", "release")) {
     KT = KT,
     events = NULL,
     event.history = NULL,
-    state.history = NULL
+    state.history = NULL,
+    timeline = NULL
   )
   class(sc) <- append(class(sc), "sisterChromatids")
   sc
@@ -187,7 +185,7 @@ initialEvents <- function(sc) {
   df <- df[order(df$time), ]
   rownames(df) <- NULL
   sc$events <- df
-  sc$state.history <- getStatus(sc, "data.frame")
+  sc$timeline <- getStatus(sc, "data.frame")
   sc
 }
 
@@ -246,9 +244,9 @@ generateEvent <- function(sc, side) {
 
   # end-on attachment: detach or replace
   else if (contact == "endon") {
-    if(model == "independent") {
+    if(model == "M1") {
       event <- "detachment"
-    } else if(model == "release") {
+    } else if(model == "M2") {
       event <- "replacement"
     }
   }
@@ -270,6 +268,18 @@ generateEvent <- function(sc, side) {
   )  
 }
 
+# helper function
+stateInfo <- function(KT, time) {
+  data.frame(
+    state = KT$contact,
+    KT.side = KT$side,
+    spindle = KT$spindle,
+    start = KT$event.time,
+    end = time
+  )
+}
+
+
 # Execute event from top of the stack
 executeEvent <- function(sc) {
   if(is.null(sc$events)) stop("No events to execute")
@@ -283,8 +293,13 @@ executeEvent <- function(sc) {
   KT.side <- ev$KT.side
   #stopifnot(event %in% EVENTS)
   
+  # store state info
+  si <- stateInfo(sc$KT[[KT.side]], ev$time)
+  sc$state.history <- rbind(sc$state.history, si)
+  
   # set sc time to event time
   sc$time <- ev$time
+  sc$KT[[KT.side]]$event.time <- ev$time
   
   # store event in history stack
   sc$event.history <- rbind(sc$event.history, ev)
@@ -319,7 +334,7 @@ executeEvent <- function(sc) {
   }
   
   # update state history
-  sc$state.history <- rbind(sc$state.history, getStatus(sc, "data.frame"))
+  sc$timeline <- rbind(sc$timeline, getStatus(sc, "data.frame"))
   
   sc
 }
@@ -356,6 +371,7 @@ simulate <- function(model, par, verbose=FALSE, max.iter=1000) {
   sc <- setErrorState(sc)
   sc <- initialEvents(sc)
   
+  # main loop
   if(verbose) cat(getStatus(sc), "\n")
   for(i in 1:max.iter) {
     sc <- executeEvent(sc)
@@ -363,9 +379,16 @@ simulate <- function(model, par, verbose=FALSE, max.iter=1000) {
     if(verbose) cat(getStatus(sc), "\n")
     if(finished(sc)) break()
   }
+  
+  # close state history
+  for(KT.side in SIDES) {
+    si <- stateInfo(sc$KT[[KT.side]], sc$time)
+    sc$state.history <- rbind(sc$state.history, si)
+  }
   # cleanup ugly mess
   rownames(sc$event.history) <- NULL
   rownames(sc$state.history) <- NULL
+  rownames(sc$timeline) <- NULL
   sc
 }
 

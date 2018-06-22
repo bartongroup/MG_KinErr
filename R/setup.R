@@ -13,6 +13,3 @@ public_html <- "http://www.compbio.dundee.ac.uk/user/mgierlinski/kinerr/"
 
 nbatch <- 100
 
-FORMS <- c(1, 2, 4)
-CONVS <- c(0.2, 0.5, 1)
-DETS <- c(0.5, 1, 2)
