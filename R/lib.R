@@ -18,7 +18,7 @@ setParameterRate <- function(par, process, rate) {
 }
 
 # parameters object constructor
-parametersRates <- function(formation=2, conversion=0.5, detachment=1, replacement=2, knockoff=1e16) {
+parametersRates <- function(formation=0.5, conversion=2, detachment=1, replacement=0.5, knockoff=1e16) {
   for(r in c(formation, conversion, detachment, replacement, knockoff)) {
     stopifnot(is.numeric(r) && r > 0)
   }
@@ -358,10 +358,9 @@ nextEvent <- function(sc) {
 }
 
 finished <- function(sc) {
-  sc$KT$L$contact == "endon" &&
-  sc$KT$R$contact == "endon" &&
-  sc$KT$L$spindle == "L" &&
-  sc$KT$R$spindle == "R"
+  sc$KT$L$contact == "endon" && sc$KT$R$contact == "endon" &&
+  ((sc$KT$L$spindle == "L" && sc$KT$R$spindle == "R") ||
+    (sc$KT$L$spindle == "R" && sc$KT$R$spindle == "L"))
 }
 
 
