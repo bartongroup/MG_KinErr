@@ -45,7 +45,7 @@ Collaborators: Tomo Tanaka
 
 [Proposal]()
 
-Notebooks: [1]()
+Notebooks: [1](http://www.compbio.dundee.ac.uk/user/mgierlinski/kinerr/doc/Notes.1.nb.html)
 
 ```{r setup, cache=FALSE, echo=FALSE}
 source("../R/setup.R")
@@ -58,21 +58,39 @@ source("../R/tests.R")
 
 ## Model
 
-There are two kinetochores, left and right. Each of them can be in one of the following attachment states:
+In this document we present a simple computer model for error correction in kinetochore-microtubule interaction during bi-orientation. The configuration is very simple, perhaps simplistic, but it can test the underlying mechanisms. We focus on two situations:
+
+- KT detachment from MT ends creates unattached KTs before the next lateral attachment is formed (model "M1")
+- End-on attachment is directly replaced by the latteral attachment wihtout producing unattached KTs (model "M2")
+
+### Setup
+
+In our tmodel there are two kinetochores, left and right. Each of them can be in one of the following attachment states:
 
 - none
 - lateral
 - endon
 - dual
 
-In addition to this, we store information about which spindle the KT is connected to (left or right).
+Dual attachment represents the second model, when the lateral attachment is formed on top of the existing end-on attachment. In addition to the connection state, we also record which spindle pole (left or right) the kinetochore is attached to. Therefore, the state of the system can be briefly denoted as, e.g.:
 
-Transition between states are governed by a Poisson law. Each transition happens randomly a rate, $R$, expressed in events per minute.
+```
+lateral-R endon-R
+```
 
+The left KT has a lateral attachment to a microtubule extending from the right spindle. The right kinetochore has an end-on attachment to a microtubule extending from the right spindle.
 
-### Model 1: "independent"
+### Dynamics
 
-Here we assume that the end-on detachment and formation of the lateral attachment are independent. The sequence of events in this model is as follows. Here we only show how the model works on the left kinetochore, but obviously, it works on both.
+Transition between states are governed by a Poisson law. That is, at any given time the probability of transition from, e.g., lateral to end-on attachment is constant. Each transition happens randomly a rate, $R$, expressed in events per minute.
+
+The model allows for other probability prescriptions, for example, the transition time can be expressed by a Gaussian probability.
+
+The simulation is a sequence of events. The time of the next event is randomly drawn based on the current event and the probability law assumed. The events are generated for both kinetochores concurrently, until the final stable configuration is established (`endon-L endon-R`).
+
+### Model 1
+
+Here we assume that the end-on detachment and formation of the lateral attachment are independent. For illustration purposes, we show how the model works on the left kinetochore, but obviously, it works on both. Also, microtubules can reach kinetochores at the opposite side. The sequence of events in this model is as follows.
 
 Let's start with an unattached microtubule.
 
@@ -82,32 +100,50 @@ defaultParameters <- function() {
     formation = 2,
     conversion = 0.5,
     detachment = 1,
+    replacement = 2,
     knockoff = 1e16
   )
 }
+M1.parnames <- c("formation", "conversion", "detachment")
+M2.parnames <- c("replacement", "knockoff", "conversion")
+
+defPars <- function(model) {
+  pars <- defaultParameters()
+  if(model == "M1") {
+    parnames = M1.parnames
+  } else {
+    parnames = M2.parnames
+  }
+  P <- lapply(parnames, function(pn) {
+    data.frame(parameter=pn, value=pars[[pn]]$value$rate)
+  })
+  do.call(rbind, P)
+}
 ```
 
+
+
 ```{r plot_lateral_attachement, fig.width=4, fig.height=2}
-par <- parametersRates(2, 0.5, 1)
-sc <- sisterChromatids(par, model="independent")
+par <- defaultParameters()
+sc <- sisterChromatids(par, model="M1")
 plotSisterChromatids(sc)
 ```
 
-A lateral attachment is created at a rate $R_{\rm lat}$.
+A lateral attachment is created at a rate $R_\mathrm{form}$.
 
 ```{r plot_emplty_sc, fig.width=4, fig.height=2}
 sc <- formLateralAttachment(sc, "L", "L")
 plotSisterChromatids(sc)
 ```
 
-Next, the lateral attachment is converted into the end-on attachment, at a rate $R_{\rm con}$:
+Next, the lateral attachment is converted into the end-on attachment, at a rate $R_\mathrm{conv}$:
 
 ```{r plot_endon_attachement, fig.width=4, fig.height=2}
 sc <- convertAttachment(sc, "L")
 plotSisterChromatids(sc)
 ```
 
-Finally, the end-on attachment is detached at a rate $R_{\rm det}$:
+Finally, the microtubule is detached at a rate $R_\mathrm{det}$:
 
 ```{r plot_detachment, fig.width=4, fig.height=2}
 sc <- detachKT(sc, "L")
@@ -115,33 +151,33 @@ plotSisterChromatids(sc)
 ```
 
 
-### Model 2: "release"
+### Model 2
 
 In this model we assume that the end-on detachment happens only upon formation of the lateral attachment.  Hence, we never observe a detached state. This is the sequence of events. Now, we start with an end-on attachment:
 
 
 ```{r plot_endon_attachement_2, fig.width=4, fig.height=2}
-sc <- sisterChromatids(par, model="release")
+sc <- sisterChromatids(par, model="M2")
 sc <- formLateralAttachment(sc, "L", "L")
 sc <- convertAttachment(sc, "L")
 plotSisterChromatids(sc)
 ```
 
-Then, a lateral attachment can be created at the same KT, at a standard rate $R_{\rm lat}$. For a moment we have a "dual" attachment.
+Then, a lateral attachment can be created at the same KT, at a standard rate $R_\mathrm{form}$. For a moment we have a "dual" attachment.
 
 ```{r plot_dual_attachement, fig.width=4, fig.height=2}
 sc <- formDualAttachment(sc, "L", "L")
 plotSisterChromatids(sc)
 ```
 
-which, in turn, leads to the lateral attachment by knocking off the end-on MT. Here we assume no delay, though a knock-off rate $R_{\rm ko}$ can be introduced.
+which, in turn, leads to the lateral attachment by knocking off the end-on MT. Here we assume no delay, though a knock-off rate $R_\mathrm{ko}$ can be introduced.
 
 ```{r plot_dual_detachment, fig.width=4, fig.height=2}
 sc <- knockoffKT(sc, "L")
 plotSisterChromatids(sc) 
 ```
 
-As before, the lateral attachment is converted into end-on at a rate $R_{\rm con}$.
+As before, the lateral attachment is converted into end-on at a rate $R_\mathrm{conv}$.
 
 ```{r plot_endon_attachement_3, fig.width=4, fig.height=2}
 sc <- convertAttachment(sc, "L")
@@ -152,7 +188,23 @@ In this model, the detachment rate does not come into effect.
 
 ## Tests
 
-We undertake a few simple tests to confirm that the model is working correctly. Specifically, we build the distribution of event duration over many simulation runs. The mean duration should be as in the input parameters. We set the following parameters: $R_{\rm lat} = 2~\rm{min}^{-1}$, $R_{\rm con} = 0.5~\rm{min}^{-1}$ and $R_{\rm det} = 1~\rm{min}^{-1}$. We keep large $R_{\rm del} = 10^{16}~\rm{min}^{-1}$, which corresponds to no delay.
+### "GenerateTime" function
+
+First, I test my internal function for accuracy. The red curve shows the theoretical exponential distirbution.
+
+
+```{r generate_time_test, fig.width=3, fig.height=3}
+par <- defaultParameters()
+gt <- lapply(1:100000, function(i) generateTime("detachment", par))
+sim <- data.frame(event="detachment", duration=do.call(rbind, gt))
+plotDurationDistribution(sim, par)
+```
+
+Looks fine!
+
+### Full simulation
+
+We undertake a few simple tests to confirm that the model is working correctly. Specifically, we build the distribution of event duration over many simulation runs. The mean duration should be as in the input parameters. We set the following parameters: $R_\mathrm{form} = 2~\mathrm{min}^{-1}$, $R_\mathrm{conv} = 0.5~\mathrm{min}^{-1}$ and $R_\mathrm{det} = 1~\mathrm{min}^{-1}$. We keep large $R_\mathrm{ko} = 10^{16}~\mathrm{min}^{-1}$, which corresponds to no delay.
 
 ```{r simulation_test_read}
 simtest1 <- readRDS(paste0(projectDir, "data/sim_test1.rds"))
@@ -160,47 +212,77 @@ simtest2 <- readRDS(paste0(projectDir, "data/sim_test2.rds"))
 simtest3 <- readRDS(paste0(projectDir, "data/sim_test3.rds"))
 ```
 
-### Model 1
+#### Model 1
 
 Here are measured distributions of event duration versus theoretical exponential distributions.
 
-```{r simulation_test_results_independent_plot, fig.width=7, fig.height=3}
+```{r simulation_test_results_M1_plot, fig.width=7, fig.height=3}
+par <- defaultParameters()
 plotDurationDistribution(simtest1, par)
 ```
 
 And these are mean of these distributions, which should correspond to 1 / rate (that is conversion = 2, detachment = 1 and formation = 0.5):
 
-```{r simulation_test_results_independent}
-df <- simtest1 %>% group_by(event) %>% summarise("mean duration"=mean(duration))
-myKable(df, digits=3)
+
+```{r simulation_test_results_M1}
+df <- simtest1 %>% group_by(event) %>% summarise("mean duration"=mean(duration), SE=sd(duration) / sqrt(n()))
+myKable(df, digits=4)
 ```
 
-### Model 2
+There is a small discrepancy between simulated data and theoretical distributions. This is weid, as, for test purposes, I store generated event durations directly as they come out of the random generator. As tested above, the generator seems fine. The only thing I can think of is that the events are alternating, so durations per event are not generated as consecutive numbers. Perhaps this causes departures from ideal results. Also, only detachemnt seems to be different.
 
-The same for the "release" model:
+I made a simple test to calculate the mean of every n-th random number generated by `rexp`. I generate 100,000 numbers in total (but many more are skipped).
 
-```{r simulation_test_results_release_plot, fig.width=7, fig.height=3}
+```{r random_generator_test}
+rgTest <- function(n, skip, rate=1) {
+  P <- lapply(1:n, function(i) {
+    for(j in 1:skip) rexp(1, rate)
+    rexp(1, rate)
+  })
+  do.call(rbind, P)
+}
+
+P <- lapply(1:6, function(skip) {
+  x <- rgTest(100000, skip)
+  data.frame(
+    skip = skip,
+    mean = mean(x),
+    SE = sd(x) / sqrt(length(x))
+  )
+})
+P <- do.call(rbind, P)
+
+myKable(P, digits=4)
+```
+
+No obvious systematic deviation. Puzzling.
+
+#### Model 2
+
+The same for the "M2" model:
+
+```{r simulation_test_results_M2_plot, fig.width=7, fig.height=3}
 plotDurationDistribution(simtest2, par)
 ```
 
-and for the "release" model:
+and the mean times:
 
-```{r simulation_test_results_release}
-df <- simtest2 %>% group_by(event) %>% summarise("mean duration"=mean(duration))
-myKable(df, digits=3)
+```{r simulation_test_results_M2}
+df <- simtest2 %>% group_by(event) %>% summarise("mean duration"=mean(duration), SE=sd(duration) / sqrt(n()))
+myKable(df, digits=4)
 ```
 
 They are reasonably close to the input parameters. In the second test the "knockoff" is very short: this corresponds to infinitesimal delay of detachment after lateral attachment. When we set a knockoff rate of 1 per minute, we get:
 
-```{r simulation_test_results_release2_plot, fig.width=7, fig.height=3}
-par2 <- parametersRates(2, 0.5, 1, 1)
+```{r simulation_test_results_M2a_plot, fig.width=7, fig.height=3}
+par2 <- parametersRates(replacement=2, knockoff=1, conversion=0.5)
 plotDurationDistribution(simtest3, par2)
 ```
 
 
-```{r simulation_test_results_release2}
-df <- simtest3 %>% group_by(event) %>% summarise("mean duration"=mean(duration))
-myKable(df, digits=3)
+```{r simulation_test_results_M2a}
+df <- simtest3 %>% group_by(event) %>% summarise("mean duration"=mean(duration), SE=sd(duration) / sqrt(n()))
+myKable(df, digits=4) 
 ```
 
 
@@ -210,7 +292,7 @@ We start in an error configuration, with both kinetochores connected to the same
 
 ```{r initial_configuration, fig.width=4, fig.height=2}
 par <- parametersRates(2, 0.5, 1)
-sc <- sisterChromatids(par, model="independent")
+sc <- sisterChromatids(par, model="M1")
 sc <- setErrorState(sc)
 plotSisterChromatids(sc)
 ```
@@ -221,8 +303,14 @@ Here is an example of a simulation, showing the sequence of states for each kine
 
 ```{r simulation_example}
 set.seed(102)
-sc <- simulate("independent", par)
-myKable(sc$state.history, bootstrap="hover")
+sc <- simulate("M1", par)
+myKable(sc$timeline, bootstrap="hover")
+```
+
+Here is a graphical representation of this simulation run:
+
+```{r simulation_example_plot, fig.width=8, fig.height=2}
+plotStateHistory(sc) 
 ```
 
 The final configuration is the correct "endon-L endon-R". 
@@ -233,13 +321,18 @@ plotSisterChromatids(sc)
 
 ### Model 2
 
-Another example, this time for the "release" model.
+Another example, this time for model 2.
 
-```{r simulation_example_release}
+```{r simulation_example_M2}
 set.seed(110)
-sc <- simulate("release", par)
-myKable(sc$state.history, bootstrap="hover")
+sc <- simulate("M2", par)
+myKable(sc$timeline, bootstrap="hover")
 ```
+
+```{r simulation_example_M2_plot, fig.width=8, fig.height=2}
+plotStateHistory(sc) 
+```
+
 
 ## Results
 
@@ -249,13 +342,28 @@ myKable(sc$state.history, bootstrap="hover")
 defsims <- readRDS(paste0(projectDir, "data/sim_defpar.rds"))
 ```
 
-We run `r N(as.integer(nrow(defsims) / nlevels(defsims$model)))` simulations for the default parameters ($R_{\rm lat} = 2~\rm{min}^{-1}$, $R_{\rm con} = 0.5~\rm{min}^{-1}$ and $R_{\rm det} = 1~\rm{min}^{-1}$). Here is the distribution of simulation time.
+
+
+We run `r N(as.integer(nrow(defsims) / nlevels(defsims$model)))` simulations for the default parameters for model 1:
+
+```{r default_parameters_m1}
+myKable(defPars("M1"))
+```
+
+and for model 2:
+
+```{r default_parameters_m2}
+myKable(defPars("M2"))
+```
+
+Here is the distribution of simulation time.
 
 ```{r simulation_time_plot, fig.width=6, fig.height=3}
 ggplot(defsims, aes(time)) +
   geom_histogram(bins=100) +
   facet_grid(. ~ model) +
-  xlim(0, 100)
+  xlim(0, 100) +
+  labs(x = "Time (min)", y = "Count")
 ```
 
 Here is the mean and median simulation time for both models:
@@ -277,45 +385,100 @@ allsims <- readRDS(paste0(projectDir, "data/sim_allpar.rds"))
 ```
 
 ```{r all_sims_mean}
-allsim.means <- allsims %>% group_by(model, formation, conversion, detachment) %>% summarise(mean.time = mean(time), n=n()) %>% as.data.frame
+allsim.means <- allsims %>% group_by(model, formation, conversion, detachment, knockoff, replacement) %>% summarise(mean.time = mean(time), se.time = sd(time) / sqrt(n()), n=n()) %>% as.data.frame
 allsim.means <- allsim.means[order(allsim.means$mean.time), c(1:(ncol(allsim.means)-1))]
+allsim.means.m1 <- allsim.means[allsim.means$model == "M1", c(M1.parnames, "mean.time", "se.time")]
+allsim.means.m2 <- allsim.means[allsim.means$model == "M2", c(M2.parnames, "mean.time", "se.time")]
 ```
+
+
+```{r simtime_function2}
+getParameterGrid <- function(sim, model, parnames) {
+  sim <- sim[sim$model == model, ]
+  P <- setNames(lapply(parnames, function(p) {
+    paste(sort(unique(sim[, p])), collapse=", ")
+  }), parnames)
+  df <- do.call(rbind, P)
+}
+
+plotParameterMeanTime <- function(sim, parnames) {
+  P <- lapply(parnames, function(m) {
+    df <- data.frame(x=as.factor(sim[, m]), y=sim$mean.time)
+    ggplot(df, aes(x, y)) +
+      geom_boxplot() +
+      labs(x=m, y="mean time (min)") +
+      scale_y_log10() +
+      xlab(paste(m, "rate"))
+  })
+  grid.arrange(grobs=P, ncol=3)
+}
+```
+
+
+#### Model 1
 
 We run the simulation across a grid of parameters. This table show the rates used:
 
-```{r parameter_grid}
-parnames <- c("formation", "conversion", "detachment")
-P <- setNames(lapply(parnames, function(p) {
-  paste(sort(unique(allsim.means[, p])), collapse=", ")
-}), parnames)
-df <- do.call(rbind, P)
+```{r parameter_grid_m1}
+df <- getParameterGrid(allsim.means, "M1", M1.parnames)
 myKable(df, row.names = TRUE)
 ```
 
-Simply, we start from the default values and vary each parameter by factor two, up and down. This gives us $2 \times 5^3 = 250$ parameter sets for two models. For each set we run `r N(as.integer(nrow(allsims) / nrow(allsim.means)))` simulations. The table below shows results order by mean simulation time. We notice that the simualation time depends almost exclusively on the conversion rate, $r_\rm{con}$.
+Simply, we start from the default values and vary each parameter by factor two, up and down (expcept for konckoff). For each set we run `r N(as.integer(nrow(allsims) / nrow(allsim.means)))` simulations. The table below shows results ordered by the mean simulation time.
 
-```{r all_sims_show_mean}
-kable(allsim.means, format="html", row.names=FALSE, digits=2) %>% kable_styling("condensed", full_width = FALSE, position="left", font_size=12) %>% scroll_box(width="800 px", height = "400px") 
+```{r all_sims_show_mean_m1}
+kable(allsim.means.m1, format="html", row.names=FALSE, digits=2) %>% kable_styling("condensed", full_width = FALSE, position="left", font_size=12) %>% scroll_box(width="800 px", height = "400px") 
 ```
 
-We can build a linear model to show this.
+We can build a linear model to see which parameters are the most important:
 
-```{r all_sims_linear_model}
-fit <- lm(mean.time ~ model + formation + conversion + detachment, data=allsim.means)
-fit$call
-anova(fit)
+```{r all_sims_linear_model_m1}
+fit1 <- lm(mean.time ~ formation + conversion + detachment, data=allsim.means.m1)
+summary(fit1)
 ```
 
-Indeed, conversion rate is much more important than anything else.
+And plot the dependence of the mean time against each parameter:
 
-```{r all_sims_mean_plot}
-P <- lapply(c("model", "formation", "conversion", "detachment"), function(m) {
-  #df <- allsim.means %>% group_by_(.dots=m) %>% summarise("mean"=mean(mean.time))
-  df <- data.frame(x=as.factor(allsim.means[, m]), y=allsim.means$mean.time)
-  ggplot(df, aes(x, y)) +
-    geom_boxplot() +
-    labs(x=m, y="mean time") +
-    scale_y_log10()
-})
-grid.arrange(grobs=P)
+```{r all_sims_mean_plot_m1, fig.width=8, fig.height=3}
+plotParameterMeanTime(allsim.means.m1, M1.parnames)
+```
+
+
+#### Model 2
+
+Now, the same for model 2. Parameter grid:
+
+```{r parameter_grid_m2}
+df <- getParameterGrid(allsim.means, "M2", M2.parnames)
+myKable(df, row.names = TRUE)
+```
+
+Table with ordered mean times:
+
+```{r all_sims_show_mean_m2}
+kable(allsim.means.m2, format="html", row.names=FALSE, digits=2) %>% kable_styling("condensed", full_width = FALSE, position="left", font_size=12) %>% scroll_box(width="800 px", height = "400px") 
+```
+
+Linear fit:
+
+```{r all_sims_linear_model_m2}
+fit1 <- lm(mean.time ~ replacement + knockoff + conversion, data=allsim.means.m2)
+summary(fit1)
+```
+
+Parameter plot:
+
+```{r all_sims_mean_plot_m2, fig.width=8, fig.height=3}
+plotParameterMeanTime(allsim.means.m2, M2.parnames)
+```
+
+A few examples of simulation runs for a fast model 1 (that is $R_\mathrm{form}=1$, $R_\mathrm{conv}=2$ and $R_\mathrm{det}=0.5$):
+
+```{r fast_simulations_examples, fig.width=10, fig.height=1.5}
+set.seed(67)
+for(i in 1:5) {
+  sc <- simulate("M1", parametersRates(formation = 1, conversion = 2, detachment = 0.5))
+  #print(sc$time)
+  print(plotStateHistory(sc, max.time=17))
+} 
 ```

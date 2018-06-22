@@ -52,3 +52,16 @@ Tests look fine, though, for some reason, detachment is a bit faster in simulati
 
 Since there is very little dependence on formation and detachment rate, I decided to widen the range of parameters. To avoide huge calculations and huge objects, I reduced the number of simulations from 100,000 to 10,000 per set of parameters. This should be enough for mean or median time.
 
+# 21/06/2018
+
+There is still a small discrepancy between event durations and theoretical exponential distributions. It's bugging me.
+
+A code modification for better testing: now each generated event (event, duraion) is stored. So, I can recover these events later and check duration distribution directly. Still, there are discrepancies. I also tried changing random seed before running tests. No effect.
+
+New figures: graphical representation of a simulation's timeline.
+
+# 22/06/2018
+
+Renaming models, re-running simulations. Adding more description to the document.
+
+Decided to separete the models and run the grid for each model separetely. Now the results is different: detachment rate became important for model M1. This is because when I did models together, it was diluted by model M2.
