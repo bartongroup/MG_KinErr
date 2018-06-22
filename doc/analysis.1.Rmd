@@ -163,7 +163,7 @@ sc <- convertAttachment(sc, "L")
 plotSisterChromatids(sc)
 ```
 
-Then, a lateral attachment can be created at the same KT, at a standard rate $R_\mathrm{form}$. For a moment we have a "dual" attachment.
+Then, a lateral attachment can be created at the same KT, at a rate $R_\mathrm{rep}$. This is the same process as "formation" in model 1, but we call it "replacement" here, for distinction. For a moment we have a "dual" attachment.
 
 ```{r plot_dual_attachement, fig.width=4, fig.height=2}
 sc <- formDualAttachment(sc, "L", "L")
