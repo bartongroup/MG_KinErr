@@ -65,3 +65,11 @@ New figures: graphical representation of a simulation's timeline.
 Renaming models, re-running simulations. Adding more description to the document.
 
 Decided to separete the models and run the grid for each model separetely. Now the results is different: detachment rate became important for model M1. This is because when I did models together, it was diluted by model M2.
+
+
+Meeting with Tomo: need to change parameter ranges (they were incorrect). Also, the final stable configuration can be on of the two:
+
+```
+endon-L endon-R
+endon-R endon-L
+```

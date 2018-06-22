@@ -97,10 +97,10 @@ Let's start with an unattached microtubule.
 ```{r default_parameters}
 defaultParameters <- function() {
   parametersRates(
-    formation = 2,
-    conversion = 0.5,
+    formation = 0.5,
+    conversion = 2,
     detachment = 1,
-    replacement = 2,
+    replacement = 0.5,
     knockoff = 1e16
   )
 }
@@ -262,6 +262,7 @@ No obvious systematic deviation. Puzzling.
 The same for the "M2" model:
 
 ```{r simulation_test_results_M2_plot, fig.width=7, fig.height=3}
+par <- defaultParameters()
 plotDurationDistribution(simtest2, par)
 ```
 
@@ -275,7 +276,7 @@ myKable(df, digits=4)
 They are reasonably close to the input parameters. In the second test the "knockoff" is very short: this corresponds to infinitesimal delay of detachment after lateral attachment. When we set a knockoff rate of 1 per minute, we get:
 
 ```{r simulation_test_results_M2a_plot, fig.width=7, fig.height=3}
-par2 <- parametersRates(replacement=2, knockoff=1, conversion=0.5)
+par2 <- parametersRates(replacement=0.5, knockoff=1, conversion=2)
 plotDurationDistribution(simtest3, par2)
 ```
 
@@ -362,7 +363,7 @@ Here is the distribution of simulation time.
 ggplot(defsims, aes(time)) +
   geom_histogram(bins=100) +
   facet_grid(. ~ model) +
-  xlim(0, 100) +
+  xlim(0, 40) +
   labs(x = "Time (min)", y = "Count")
 ```
 
