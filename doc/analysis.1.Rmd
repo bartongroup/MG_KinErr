@@ -14,6 +14,7 @@ output:
 library(knitr)
 library(kableExtra)
 library(gridExtra)
+suppressMessages(library(viridis))
 suppressMessages(library(dplyr))
 knitr::opts_chunk$set(
   warning = FALSE,
@@ -61,11 +62,11 @@ source("../R/tests.R")
 In this document we present a simple computer model for error correction in kinetochore-microtubule interaction during bi-orientation. The configuration is very simple, perhaps simplistic, but it can test the underlying mechanisms. We focus on two situations:
 
 - KT detachment from MT ends creates unattached KTs before the next lateral attachment is formed (model "M1")
-- End-on attachment is directly replaced by the latteral attachment wihtout producing unattached KTs (model "M2")
+- End-on attachment is directly replaced by the lateral attachment without producing unattached KTs (model "M2")
 
 ### Setup
 
-In our tmodel there are two kinetochores, left and right. Each of them can be in one of the following attachment states:
+In our model there are two kinetochores, left and right. Each of them can be in one of the following attachment states:
 
 - none
 - lateral
@@ -143,7 +144,7 @@ sc <- convertAttachment(sc, "L")
 plotSisterChromatids(sc)
 ```
 
-Finally, the microtubule is detached at detachemnt rate $R_\mathrm{det}$:
+Finally, the microtubule is detached at detachment rate $R_\mathrm{det}$:
 
 ```{r plot_detachment, fig.width=4, fig.height=2}
 sc <- detachKT(sc, "L")
@@ -190,26 +191,31 @@ In this model, the detachment rate does not come into effect.
 
 ### "GenerateTime" function
 
-First, I test my internal function for accuracy. The red curve shows the theoretical exponential distirbution.
+First, I test my internal function for accuracy. Using all default parameters. The red curves show the theoretical exponential distribution.
 
-
-```{r generate_time_test, fig.width=3, fig.height=3}
-par <- defaultParameters()
-gt <- lapply(1:100000, function(i) generateTime("detachment", par))
-sim <- data.frame(event="detachment", duration=do.call(rbind, gt))
-plotDurationDistribution(sim, par)
+```{r generate_time_test}
+funtest <- readRDS(paste0(projectDir, "data/sim_test1.rds"))
 ```
 
-Looks fine!
+```{r generate_time_test_plot, fig.width=8, fig.height=3}
+plotDurationDistribution(funtest, par, ncol=5)
+```
+
+Here is a table with mean and SE for these:
+
+```{r generate_time_test_table}
+df <- funtest %>% group_by(event) %>% summarise("mean duration"=mean(duration), SE=sd(duration) / sqrt(n()))
+myKable(df, digits=4)
+```
 
 ### Full simulation
 
-We undertake a few simple tests to confirm that the model is working correctly. Specifically, we build the distribution of event duration over many simulation runs. The mean duration should be as in the input parameters. We set the following parameters: $R_\mathrm{form} = 2~\mathrm{min}^{-1}$, $R_\mathrm{conv} = 0.5~\mathrm{min}^{-1}$ and $R_\mathrm{det} = 1~\mathrm{min}^{-1}$. We keep large $R_\mathrm{ko} = 10^{16}~\mathrm{min}^{-1}$, which corresponds to no delay.
+We undertake a few simple tests to confirm that the model is working correctly. Specifically, we build the distribution of event duration over many simulation runs. The mean duration should be as in the input parameters. We set the following parameters: $R_\mathrm{form} = 0.5~\mathrm{min}^{-1}$, $R_\mathrm{conv} = 2~\mathrm{min}^{-1}$ and $R_\mathrm{det} = 1~\mathrm{min}^{-1}$.
 
 ```{r simulation_test_read}
-simtest1 <- readRDS(paste0(projectDir, "data/sim_test1.rds"))
-simtest2 <- readRDS(paste0(projectDir, "data/sim_test2.rds"))
-simtest3 <- readRDS(paste0(projectDir, "data/sim_test3.rds"))
+simtest1 <- readRDS(paste0(projectDir, "data/sim_test2.rds"))
+simtest2 <- readRDS(paste0(projectDir, "data/sim_test3.rds"))
+simtest3 <- readRDS(paste0(projectDir, "data/sim_test4.rds"))
 ```
 
 #### Model 1
@@ -221,41 +227,35 @@ par <- defaultParameters()
 plotDurationDistribution(simtest1, par)
 ```
 
-And these are mean of these distributions, which should correspond to 1 / rate (that is conversion = 2, detachment = 1 and formation = 0.5):
-
+And these are mean of these distributions, which should correspond to 1 / rate (that is we expect means of conversion = 0.5, detachment = 1 and formation = 2):
 
 ```{r simulation_test_results_M1}
 df <- simtest1 %>% group_by(event) %>% summarise("mean duration"=mean(duration), SE=sd(duration) / sqrt(n()))
 myKable(df, digits=4)
 ```
 
-There is a small discrepancy between simulated data and theoretical distributions. This is weid, as, for test purposes, I store generated event durations directly as they come out of the random generator. As tested above, the generator seems fine. The only thing I can think of is that the events are alternating, so durations per event are not generated as consecutive numbers. Perhaps this causes departures from ideal results. Also, only detachemnt seems to be different.
+There is a good agreement between generated and theoretical means.
 
-I made a simple test to calculate the mean of every n-th random number generated by `rexp`. I generate 100,000 numbers in total (but many more are skipped).
-
-```{r random_generator_test}
-rgTest <- function(n, skip, rate=1) {
+```{r random_generator_test, eval=FALSE}
+rgTest <- function(n, rates=c(2, 1e16, 0.5)) {
   P <- lapply(1:n, function(i) {
-    for(j in 1:skip) rexp(1, rate)
-    rexp(1, rate)
+    d <- lapply(rates, function(rate) {
+      data.frame(
+        rate=rate,
+        duration=rexp(1, rate)
+      )
+    })
+    do.call(rbind, d)
   })
   do.call(rbind, P)
 }
 
-P <- lapply(1:6, function(skip) {
-  x <- rgTest(100000, skip)
-  data.frame(
-    skip = skip,
-    mean = mean(x),
-    SE = sd(x) / sqrt(length(x))
-  )
-})
-P <- do.call(rbind, P)
+rgt <- rgTest(1000)
+df <- rgt %>% group_by(rate) %>% summarise("mean duration"=mean(duration), SE=sd(duration) / sqrt(n()))
 
-myKable(P, digits=4)
+myKable(df, digits=4)
 ```
 
-No obvious systematic deviation. Puzzling.
 
 #### Model 2
 
@@ -286,6 +286,7 @@ df <- simtest3 %>% group_by(event) %>% summarise("mean duration"=mean(duration),
 myKable(df, digits=4) 
 ```
 
+Everything is in good agreement.
 
 ## Simulation
 
@@ -413,6 +414,15 @@ plotParameterMeanTime <- function(sim, parnames) {
   })
   grid.arrange(grobs=P, ncol=3)
 }
+
+plotFCsumDet <- function(sim) {
+  sim$fc <- 1/sim$formation + 1/sim$conversion
+  sim$detachment <- as.factor(sim$detachment)
+  ggplot(sim) +
+    geom_point(aes(x=fc, y=mean.time, colour=detachment)) +
+    scale_y_log10() +
+    labs(x="mean formation + mean conversion", y="mean time (min)")
+}
 ```
 
 
@@ -425,7 +435,7 @@ df <- getParameterGrid(allsim.means, "M1", M1.parnames)
 myKable(df, row.names = TRUE)
 ```
 
-Simply, we start from the default values and vary each parameter by factor two, up and down (expcept for konckoff). For each set we run `r N(as.integer(nrow(allsims) / nrow(allsim.means)))` simulations. The table below shows results ordered by the mean simulation time.
+Simply, we start from the default values and vary each parameter by factor two, up and down (except for knockoff). For each set we run `r N(as.integer(nrow(allsims) / nrow(allsim.means)))` simulations. The table below shows results ordered by the mean simulation time.
 
 ```{r all_sims_show_mean_m1}
 kable(allsim.means.m1, format="html", row.names=FALSE, digits=2) %>% kable_styling("condensed", full_width = FALSE, position="left", font_size=12) %>% scroll_box(width="800 px", height = "400px") 
@@ -442,6 +452,24 @@ And plot the dependence of the mean time against each parameter:
 
 ```{r all_sims_mean_plot_m1, fig.width=8, fig.height=3}
 plotParameterMeanTime(allsim.means.m1, M1.parnames)
+```
+
+Now, conversion always follows formation and we think that the total duration of these two is important. Since our parameters are rates, mean formation and conversion times are $1/R_\mathrm{form}$ and $1/R_\mathrm{conv}$, respectively. Below, we plot the sum of both quantities on the x-axis and the mean simulation time on the y-axis. Colour correspond to different detachment rates.
+
+```{r fc_det_plot, fig.width=5, fig.height=4}
+plotFCsumDet(allsim.means.m1)
+```
+
+We need high formation and conversion rates, and, perhaps, a low detachment rate. Here is a heatmap of formation versus conversion, for fixed detachment rate of 0.5:
+
+```{r heatmap_fc, fig.width=5, fig.height=4}
+s <- subset(allsim.means.m1, detachment == 0.5)
+s$conversion <- as.factor(s$conversion)
+s$formation <- as.factor(s$formation)
+ggplot(s) +
+  geom_tile(aes(x=formation, y=conversion, fill=mean.time)) +
+  labs(x="formation rate", y="conversion rate", fill="Mean time (min)") +
+  scale_fill_viridis()
 ```
 
 

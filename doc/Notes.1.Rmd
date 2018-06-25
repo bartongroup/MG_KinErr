@@ -25,7 +25,7 @@ Thinking about how to build a model. Started with a perhaps over-complicated mod
 
 # 15/06/2018
 
-Finessing the model. Decided to simplify it. Now I only keep kinetochores, each of them in a different attachment states. Then there are rulses of transformation between states. There is no time step, event times are generted from the exponential distribution.
+Finessing the model. Decided to simplify it. Now I only keep kinetochores, each of them in a different attachment states. Then there are rules of transformation between states. There is no time step, event times are generated from the exponential distribution.
 
 Problems with the alternative model. Crashes on lateral attachment.
 
@@ -39,7 +39,7 @@ Testing model - extracting event duration data and comparing to input parameters
 
 # 20/06/2018
 
-Doing some code tweaking. Discovered package "microbenchmark". Very usesful. For example, it turns out tests like
+Doing some code tweaking. Discovered package "microbenchmark". Very useful. For example, it turns out tests like
 
 ```
 stopifnot(side %in% SIDES)
@@ -50,13 +50,13 @@ that I have in some of the functions increase execution time of the entire funct
 
 Tests look fine, though, for some reason, detachment is a bit faster in simulations that it should be. It's a tiny difference, but there is one. Creating plots of test distributions.
 
-Since there is very little dependence on formation and detachment rate, I decided to widen the range of parameters. To avoide huge calculations and huge objects, I reduced the number of simulations from 100,000 to 10,000 per set of parameters. This should be enough for mean or median time.
+Since there is very little dependence on formation and detachment rate, I decided to widen the range of parameters. To avoid huge calculations and huge objects, I reduced the number of simulations from 100,000 to 10,000 per set of parameters. This should be enough for mean or median time.
 
 # 21/06/2018
 
 There is still a small discrepancy between event durations and theoretical exponential distributions. It's bugging me.
 
-A code modification for better testing: now each generated event (event, duraion) is stored. So, I can recover these events later and check duration distribution directly. Still, there are discrepancies. I also tried changing random seed before running tests. No effect.
+A code modification for better testing: now each generated event (event, duration) is stored. So, I can recover these events later and check duration distribution directly. Still, there are discrepancies. I also tried changing random seed before running tests. No effect.
 
 New figures: graphical representation of a simulation's timeline.
 
@@ -64,7 +64,7 @@ New figures: graphical representation of a simulation's timeline.
 
 Renaming models, re-running simulations. Adding more description to the document.
 
-Decided to separete the models and run the grid for each model separetely. Now the results is different: detachment rate became important for model M1. This is because when I did models together, it was diluted by model M2.
+Decided to separate the models and run the grid for each model separately. Now the results is different: detachment rate became important for model M1. This is because when I did models together, it was diluted by model M2.
 
 
 Meeting with Tomo: need to change parameter ranges (they were incorrect). Also, the final stable configuration can be on of the two:
@@ -73,3 +73,19 @@ Meeting with Tomo: need to change parameter ranges (they were incorrect). Also, 
 endon-L endon-R
 endon-R endon-L
 ```
+
+# 25/06/2018
+
+Trying to understand why I get distribution of detachment (M1) and replacement (M2) time different from theoretical. The mean is shorter, in particular in replacement.
+
+- it is not mistaken identity: when I run model with all parameters = 1, the replacement mean duration (over 1000 simulations) is 0.84.
+- it is not the random number generator: I did try to generate all numbers in advance and then even randomly select a number from a table, still the same effect
+- both detachment and replacement are the first events to happen. I tried to remove the these events while calculating statistics, no effect. I also changed the initial configuration to detached (so the first events would always be "formation"), but still detachment is shorter.
+- now, this is something I don't understand; instead of calling `generateTime` for each event, I replaced it with a direct call to `rexp(1, 1)`. Hence each duration should be always with rate = 1. And yet, over many simulations, mean detachment duration is 0.85 (conversion is 1.000, formation is 0.994). What is going on?
+- next, I tried running `generateEvent` function for different states: this time detachment (obtained by setting state to "endon") does not differ from the theoretical value.
+- OK, this is suggesting something: I did run just *one* simulation, but very long. I removed the stop condition and ran it over 10,000 iterations. This just creates a sequence of formation-conversion-detachment events. This time they have correct mean times. All of them! This means that my detachment problem has something to do with either initial or final events.
+- I replaced exponential generation with a simple call to `runif(1, 3)`. Over 10,000 simulations the distribution of conversion and formation are nice and flat. Detachment is skewed in a linear way, nice straight decreasing slope.
+- I tried initializing the random generator with system time (fraction seconds) at the start of each simulation: still the same problem.
+
+Finally, found it. It turns out that the last two events (detachments in M1) in each simulation were always missing. I did not record them, because they occurred after the simulation was stopped. However, because my events are generated one in advance, there were already generated. Somehow, skipping them affected the entire distribution. I'm not sure how, but is is perfectly consistent now. Also, distribution inconsistency would not affect our simulation time. So, I spent a lot of time chasing ghosts.
+
