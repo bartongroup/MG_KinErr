@@ -26,7 +26,23 @@ simulateDuration <- function(model, par, nsim=1000, ncores=6) {
 }
 
 
-plotDurationDistribution <- function(res, par, binwidth=0.05, xmax=5) {
+testGenerateFunction <- function(nsim=100000, ncores=16) {
+  par <- parametersRates()
+  gt <- mclapply(1:nsim, function(i) {
+    d <- lapply(names(par), function(ev) {
+      data.frame(
+        event = ev,
+        duration = generateTime(ev, par)
+      )  
+    })
+    do.call(rbind, d)
+  }, mc.cores = ncores)
+  sim <- do.call(rbind, gt)
+}
+
+
+
+plotDurationDistribution <- function(res, par, binwidth=0.05, xmax=5, ncol=3) {
   breaks <- seq(0, xmax, binwidth)
   res$event <- as.character(res$event)
 
@@ -43,6 +59,6 @@ plotDurationDistribution <- function(res, par, binwidth=0.05, xmax=5) {
     geom_histogram(data=res, aes(x=duration, y=..density..), breaks=breaks) +
     geom_line(data=mod, aes(x, y), colour="red") +
     #facet_grid(event ~ ., scales = "free") +
-    facet_wrap(~event, scales="free", ncol=3) +
+    facet_wrap(~event, scales="free", ncol=ncol) +
     coord_cartesian(xlim=c(0, xmax))
 }
