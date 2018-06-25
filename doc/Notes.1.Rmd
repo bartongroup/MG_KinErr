@@ -89,3 +89,11 @@ Trying to understand why I get distribution of detachment (M1) and replacement (
 
 Finally, found it. It turns out that the last two events (detachments in M1) in each simulation were always missing. I did not record them, because they occurred after the simulation was stopped. However, because my events are generated one in advance, there were already generated. Somehow, skipping them affected the entire distribution. I'm not sure how, but the results are perfectly consistent now. Also, distribution inconsistency would not affect our simulation time. So, I spent a lot of time chasing ghosts.
 
+## Meeting with Tomo
+
+- Use median instead of (or, in addition to) mean time
+- Find periods where both KTs are not connected, plot distribution of these periods
+- M1: extend detachment rate to 0.1 and 0.05
+- M1: plot simulation time distributions (individual times, not means) for a few parameters, e.g. 3 central ones (3 plots of 3x3)
+- M2: use KO rate of 1e16 and 1 for the same plot
+- From big old simulation: extract conversion time, that is from establishment of lateral attachment (finished capture) until end-on attachment. Hopefully, I should still have simulation data on the disk and probably do not need to run it again.
