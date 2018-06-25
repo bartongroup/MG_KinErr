@@ -214,6 +214,20 @@ generateTime <- function(event, par) {
   time
 }
 
+# for testing
+generateTimeTables <- function(par, n=10000) {
+  tab <- lapply(names(par), function(ev) {
+    rexp(n, par[[ev]]$value$rate)
+  })
+  names(tab) <- names(par)
+  tab
+}
+
+generateTime_ <- function(event, par) {
+  t <- TIMES[[event]]
+  sample(t, 1)
+}
+
 
 # Generate next event for agiven KT, based on the current state. Returns a data
 # frame with event type, its time and a few other things.
@@ -363,6 +377,14 @@ finished <- function(sc) {
     (sc$KT$L$spindle == "R" && sc$KT$R$spindle == "L"))
 }
 
+sys.time.fs <- function() {
+  options(digits.secs=6)
+  s <- as.character(Sys.time())
+  t <- unlist(strsplit(s, " "))[2]
+  fs <- unlist(strsplit(t, ".", fixed=TRUE))[2]
+  as.integer(fs)
+}
+
 
 simulate <- function(model, par, verbose=FALSE, max.iter=1000) {
   sc <- sisterChromatids(par, model=model)
@@ -378,11 +400,13 @@ simulate <- function(model, par, verbose=FALSE, max.iter=1000) {
     if(finished(sc)) break()
   }
   
-  # close state history
+  # close state and event history
   for(KT.side in SIDES) {
     si <- stateInfo(sc$KT[[KT.side]], sc$time)
     sc$state.history <- rbind(sc$state.history, si)
   }
+  sc$event.history <- rbind(sc$event.history, sc$events)
+  
   # cleanup ugly mess
   rownames(sc$event.history) <- NULL
   rownames(sc$state.history) <- NULL
