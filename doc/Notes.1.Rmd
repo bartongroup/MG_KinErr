@@ -91,6 +91,7 @@ Finally, found it. It turns out that the last two events (detachments in M1) in 
 
 ## Meeting with Tomo
 
+- Make plots for max time across 16 chromosomes
 - Use median instead of (or, in addition to) mean time
 - Find periods where both KTs are not connected, plot distribution of these periods
 - M1: extend detachment rate to 0.1 and 0.05
