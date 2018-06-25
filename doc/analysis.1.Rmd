@@ -501,6 +501,19 @@ Parameter plot:
 plotParameterMeanTime(allsim.means.m2, M2.parnames)
 ```
 
+Here is the heatmap for knockoff rate fixed at 1e16 (no delay).
+
+```{r heatmap_fc2, fig.width=5, fig.height=4}
+s <- subset(allsim.means.m2, knockoff == 1e16)
+s$conversion <- as.factor(s$conversion)
+s$replacement <- as.factor(s$replacement)
+ggplot(s) +
+  geom_tile(aes(y=conversion, x=replacement, fill=mean.time)) +
+  labs(y="conversion rate", x="replacement rate", fill="Mean time (min)") +
+  scale_fill_viridis()
+```
+
+
 A few examples of simulation runs for a fast model 1 (that is $R_\mathrm{form}=1$, $R_\mathrm{conv}=2$ and $R_\mathrm{det}=0.5$):
 
 ```{r fast_simulations_examples, fig.width=10, fig.height=1.5}
