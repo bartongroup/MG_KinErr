@@ -12,11 +12,13 @@ source("R/lib.R")
 simulationRuns <- function(model, par, nsim, ncores) {
   T <- mclapply(1:nsim, function(i) {
     sc <- simulate(model, par, verbose=FALSE)
-    sc$time
+    data.frame(time=sc$time, detached=sc$detached.duration)
   }, mc.cores = ncores)
+  T <- do.call(rbind, T)
   df <- data.frame(
     model = model,
-    time = round(unlist(T), 3)
+    time = round(T$time, 3),
+    detached = round(T$detached, 3)
   )
   for(nm in names(par)) {
     df[[nm]] <- par[[nm]]$value$rate
