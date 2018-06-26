@@ -1,6 +1,7 @@
 library(ggplot2)
 library(parallel)
 library(methods)
+library(intervals)
 
 #qq.options(code.pattern = "\\$\\{CODE\\}")
 N <- function(n) prettyNum(n, big.mark = ",")

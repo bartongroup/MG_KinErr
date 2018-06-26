@@ -292,7 +292,6 @@ stateInfo <- function(KT, time) {
   )
 }
 
-
 # Execute event from top of the stack
 executeEvent <- function(sc) {
   if(is.null(sc$events)) stop("No events to execute")
@@ -386,6 +385,22 @@ sys.time.fs <- function() {
 }
 
 
+# total duration of fully detached periods
+# that is, when both KTs are detached
+detachedDuration <- function(sc) {
+  if(sc$model != "M1") return(NULL)
+  sh <- sc$state.history
+  sh <- sh[sh$state == "none", ]
+  shL <- as.matrix(sh[sh$KT.side == "L" , c("start", "end")])
+  shR <- as.matrix(sh[sh$KT.side == "R" , c("start", "end")])
+  if(nrow(shL) == 0 | nrow(shR) == 0) return(0)
+  shL <- Intervals(shL)
+  shR <- Intervals(shR)
+  int <- interval_intersection(shL, shR)
+  sum(size(int))  # total size of intersection
+}
+
+
 simulate <- function(model, par, verbose=FALSE, max.iter=1000) {
   sc <- sisterChromatids(par, model=model)
   sc <- setErrorState(sc)
@@ -411,6 +426,8 @@ simulate <- function(model, par, verbose=FALSE, max.iter=1000) {
   rownames(sc$event.history) <- NULL
   rownames(sc$state.history) <- NULL
   rownames(sc$timeline) <- NULL
-  sc
+  sc$detached.duration <- detachedDuration(sc)
+  
+  return(sc)
 }
 
