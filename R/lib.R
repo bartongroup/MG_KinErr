@@ -387,7 +387,10 @@ sys.time.fs <- function() {
 
 # total duration of fully detached periods
 # that is, when both KTs are detached
-detachedDuration <- function(sc) {
+# This function used 'intervals' package
+# I cannot install this package in conda environment
+# due to conflicts.
+detachedDurationIntervals <- function(sc) {
   if(sc$model != "M1") return(NULL)
   sh <- sc$state.history
   sh <- sh[sh$state == "none", ]
@@ -398,6 +401,27 @@ detachedDuration <- function(sc) {
   shR <- Intervals(shR)
   int <- interval_intersection(shL, shR)
   sum(size(int))  # total size of intersection
+}
+
+# The same as above, using data.table 
+detachedDuration <- function(sc) {
+  if(sc$model != "M1") return(NULL)
+  sh <- sc$state.history
+  sh <- sh[sh$state == "none", ]
+  shL <- sh[sh$KT.side == "L" , ]
+  shL <- data.table(start=shL$start, end=shL$end)
+  shR <- sh[sh$KT.side == "R" , ]
+  shR <- data.table(start=shR$start, end=shR$end)
+  if(nrow(shL) == 0 | nrow(shR) == 0) return(0)
+  setkey(shR, start, end)
+  # find overlaps
+  ov <- foverlaps(shL, shR, type="any", nomatch=0)
+  # find intersection of overlaps
+  ov[, start := pmax(start, i.start)]
+  ov[, end := pmin(end, i.end)]
+  ov[, length := end - start]
+  
+  sum(ov$length)
 }
 
 
