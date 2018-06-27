@@ -98,3 +98,25 @@ Finally, found it. It turns out that the last two events (detachments in M1) in 
 - M1: plot simulation time distributions (individual times, not means) for a few parameters, e.g. 3 central ones (3 plots of 3x3)
 - M2: use KO rate of 1e16 and 1 for the same plot
 - From big old simulation: extract conversion time, that is from establishment of lateral attachment (finished capture) until end-on attachment. Hopefully, I should still have simulation data on the disk and probably do not need to run it again.
+
+# 26/06/2018
+
+Extending parameter grid. Making and finessing new figures.
+
+Doing overlap of detached periods between kinetochores. First, I used library `interval` for this, which is very simple. Alas, I cannot install it in the conda environment due to conflicts:
+
+```
+UnsatisfiableError: The following specifications were found to be in conflict:
+  - r-intervals -> r-base=3.3.2 -> _r-mutex=1[build=anacondar_1]
+  - r-intervals -> r-base=3.3.2 -> pango=1.40 -> glib=2.50
+  - r-revoutilsmath -> mro-base=3.4.3 -> _r-mutex=1[build=mro_2]
+  - r-revoutilsmath -> mro-base=3.4.3 -> pango[version='>=1.41.0,<2.0a0']
+```
+
+`intervals` is an old package and requires `pango` version exacly 1.40, while another installed package needs >= 1.41. So, instead, I used `data.table`. This is a bit more complicated as there is no intersection function, but it is not hard to get intersection from `foverlaps`.
+
+# 27/06/2018
+
+Running everything again and making sure that I have all data. Adding detachment times. Working on distribution plots and heatmap plots. Calculating max time for 16 chromosomes. Working on the document.
+
+Managed to extract the conversion rate from one of the old big simulation runs. I think there is no need to run it again, as the relevant information is there in one of the files. Just need to make sure that I got the right file: the most recent run with default parameters (as stated in Vanya's paper).

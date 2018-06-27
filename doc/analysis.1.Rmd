@@ -187,6 +187,25 @@ plotSisterChromatids(sc)
 
 In this model, the detachment rate does not come into effect.
 
+### Conversion rate
+
+We estimate conversion rate (from lateral to end-on) from our old simulations of kinetochore-microtubule interaction. We use the latest results from the default parameter model in this file:
+
+```{r kinetube_result_file}
+file <- "/home/mgierlinski/projects/kinetube/varcap_grid/varcap8_slr2_short0.2_long0.5_ktd0.1_mtd0.03_rf0.3_resp0.6_inimt10_tau0.5_beta0.7/kinetube_all_kt.dat"
+file
+```
+
+```{r kinetube_result}
+kt <- read.delim(file, header=FALSE, comment="#", sep="")
+sliding.time <- kt$V7
+dropoff.time <- kt$V9
+mean.sliding.time <-  mean(sliding.time[dropoff.time == 0])
+rm(kt)
+```
+
+It contains several statistics for each kinetochore, over many simulations. Among them is the total sliding time. This is not exactly what we want, as this is the accumulated time, so includes KT that were detached and re-attached. But the simulation also recorded the total drop-off time, that is the time the KT spend while being knocked-off before being re-attached. We select only data where total dropoff time is zero, which corresponds to KTs that have not been knocked-off. The mean sliding time from this file is `r round(mean.sliding.time, 2)` minutes, which gives the conversion rate of `r round(1/mean.sliding.time, 2)` per min.
+
 ## Tests
 
 ### "GenerateTime" function
@@ -304,7 +323,7 @@ plotSisterChromatids(sc)
 Here is an example of a simulation, showing the sequence of states for each kinetochore. The "L" or "R" in each state denotes the spindle to which the kinetochore is connected.
 
 ```{r simulation_example}
-set.seed(102)
+set.seed(113)
 sc <- simulate("M1", par)
 myKable(sc$timeline, bootstrap="hover")
 ```
@@ -312,27 +331,27 @@ myKable(sc$timeline, bootstrap="hover")
 Here is a graphical representation of this simulation run:
 
 ```{r simulation_example_plot, fig.width=8, fig.height=2}
-plotStateHistory(sc) 
+plotStateHistory(sc)
 ```
 
-The final configuration is the correct "endon-L endon-R". 
+The final configuration is the correct "endon-L endon-R" ("endon-R endon-L" is also considered final). 
 
 ```{r final_configuration, fig.width=4, fig.height=2}
-plotSisterChromatids(sc)
+plotSisterChromatids(sc) 
 ```
 
 ### Model 2
 
-Another example, this time for model 2.
+Another example, this time for model 2. Knockoff rate is very high ($10^{16}$), hence there is no "dual" state observed.
 
 ```{r simulation_example_M2}
-set.seed(110)
+set.seed(111)
 sc <- simulate("M2", par)
 myKable(sc$timeline, bootstrap="hover")
 ```
 
 ```{r simulation_example_M2_plot, fig.width=8, fig.height=2}
-plotStateHistory(sc) 
+plotStateHistory(sc)
 ```
 
 
@@ -399,24 +418,26 @@ getParameterGrid <- function(sim, model, parnames) {
   sim <- sim[sim$model == model, ]
   P <- setNames(lapply(parnames, function(p) {
     paste(sort(unique(sim[, p])), collapse=", ")
-  }), parnames)
+  }), paste(parnames, "rate"))
   df <- do.call(rbind, P)
 }
 ```
 
-
-
 We run the simulation across a grid of parameters. This table show the rates used:
 
 ```{r M1_parameter_grid}
-df <- getParameterGrid(allsim.means, "M1", M1.parnames)
+df <- getParameterGrid(allsim.means, "M1", M1.parnames) 
 myKable(df, row.names = TRUE)
 ```
 
-Simply, we start from the default values and vary each parameter by factor two, up and down (except for knockoff). For each set we run `r N(as.integer(nrow(allsims) / nrow(allsim.means)))` simulations. The table below shows results ordered by the mean simulation time.
+Simply, we start from the default values and vary each parameter by factor two, up and down (except for knockoff). For each set we run `r N(as.integer(nrow(allsims) / nrow(allsim.means)))` simulations.
+
+### Result table
+
+The table below shows results ordered by the mean simulation time.
 
 ```{r M1_means_table}
-kable(allsim.means.m1, format="html", row.names=FALSE, digits=2) %>% kable_styling("condensed", full_width = FALSE, position="left", font_size=12) %>% scroll_box(width="600px", height = "400px") 
+kable(allsim.means.m1, format="html", row.names=FALSE, digits=2) %>% kable_styling("condensed", full_width = FALSE, position="left", font_size=12) %>% scroll_box(width="700px", height = "400px") 
 ```
 
 ```{r M1_all_sims_linear_model, eval=FALSE}
@@ -424,11 +445,17 @@ fit1 <- lm(median.time ~ formation + conversion + detachment, data=allsim.means.
 summary(fit1)
 ```
 
-Let's plot the dependence of the median time against each parameter:
+### Projection plots
+
+Let's plot the dependence of the median time against each parameter. These plots show a projection of all data onto one parameter dimension.
 
 ```{r M1_all_sims_mean_plot, fig.width=9, fig.height=3}
 plotParameterMedianTime(allsim.means.m1, M1.parnames)
 ```
+
+Since we use quite wide range in each parameter, these plots are very scattered (vertically). This is because for one fixed value of a parameter (e.g. detachment rate of 4 in the right-hand panel) there is a large spread of simulation times due to the range of the other two parameters. These plots are not very informative, let's try something different.
+
+### Line plots
 
 Here is a plot of median time as a function of formation rate and conversion rate, for two selected values of the detachment rate.
 
@@ -452,30 +479,35 @@ This is because conversion always follows formation and what matters is the tota
 plotFCsumDet(allsim.means.m1) 
 ```
 
-We need high formation and conversion rates, and, perhaps, a low detachment rate. Here is a heatmap of formation versus conversion, for fixed detachment rate of 0.5:
+We need high formation and conversion rates, and, perhaps, a low detachment rate.
 
-```{r M1_heatmap_fc, fig.width=5, fig.height=3.5}
-s <- subset(allsim.means.m1, detachment == 0.5)
-s$conversion <- as.factor(s$conversion)
-s$formation <- as.factor(s$formation)
-ggplot(s) +
-  geom_tile(aes(x=formation, y=conversion, fill=median.time)) +
-  labs(x="Formation rate", y="Conversion rate", fill="Median time (min)") +
-  scale_fill_viridis()
+### Heatmaps
+
+Here is a heatmap of formation versus conversion, for fixed detachment rates of 0.125 and 1:
+
+```{r M1_heatmaps, fig.width=10, fig.height=3.5}
+g1 <- plotTwoHeat(allsim.means.m1, "formation", "conversion", "detachment", 0.125)
+g2 <- plotTwoHeat(allsim.means.m1, "formation", "conversion", "detachment", 1)
+grid.arrange(g1, g2, ncol=2)
 ```
 
+### Distribution plots
+
+Here we plot distribution of individual simulation times for several sets of parameters. The vertical orange line indicates the median of the distribution.
 
 ```{r M1_plot_distribution_grid, fig.width=8, fig.height=12}
 grid.par <- list(formation=c(0.25, 1, 4), conversion=c(0.25, 1, 4))
 P <- lapply(c(0.125, 0.5, 2), function(d) {
   fixed.par <- list(detachment=d)
-  plotDistributionGrid(allsims, grid.par, fixed.par)
+  plotDistributionGrid(allsims, "M1", grid.par, fixed.par)
 })
-grid.arrange(grobs=P, ncol=1) 
+grid.arrange(grobs=P, ncol=1)
 ```
 
 
 ### Detached periods
+
+Next, we investigate how long the system spends in configuration where both kinetochores are detached at the same time. We calculate the fraction of the total time spend as fully detached. Here are plots showing the detached fraction across the range of parameters.
 
 ```{r detached_periods, fig.width=8, fig.height=3}
 g1 <- plotTwoPar(allsim.means.m1, "detachment", "formation", "conversion", 2, val="median.detached.fraction", val.name="Median detached fraction", log.scale = FALSE)
@@ -502,17 +534,17 @@ for(i in 1:5) {
 
 ## Model 2
 
-Now, the same for model 2. Parameter grid:
+Here is the grid of parameters for model 2:
 
 ```{r parameter_grid_m2}
 df <- getParameterGrid(allsim.means, "M2", M2.parnames)
-myKable(df, row.names = TRUE)
+myKable(df, row.names = TRUE) 
 ```
 
-Table with ordered mean times:
+### Result table
 
 ```{r all_sims_show_mean_m2}
-kable(allsim.means.m2, format="html", row.names=FALSE, digits=2) %>% kable_styling("condensed", full_width = FALSE, position="left", font_size=12) %>% scroll_box(width="600px", height = "400px") 
+kable(allsim.means.m2, format="html", row.names=FALSE, digits=2) %>% kable_styling("condensed", full_width = FALSE, position="left", font_size=12) %>% scroll_box(width="700px", height = "400px") 
 ```
 
 
@@ -521,32 +553,41 @@ fit1 <- lm(mean.time ~ replacement + knockoff + conversion, data=allsim.means.m2
 summary(fit1)
 ```
 
-Parameter plot:
+### Projection plots
 
 ```{r all_sims_mean_plot_m2, fig.width=8, fig.height=3}
 plotParameterMedianTime(allsim.means.m2, M2.parnames)
 ```
 
-Here is the heatmap for knockoff rate fixed at 1e16 (no delay).
-
-```{r heatmap_fc2, fig.width=5, fig.height=4}
-s <- subset(allsim.means.m2, knockoff == 1e16)
-s$conversion <- as.factor(s$conversion)
-s$replacement <- as.factor(s$replacement)
-ggplot(s) +
-  geom_tile(aes(y=conversion, x=replacement, fill=mean.time)) +
-  labs(y="conversion rate", x="replacement rate", fill="Mean time (min)") +
-  scale_fill_viridis()
-```
-
+### Line plots
 
 Here is a plot of median time as a function of replacement rate and conversion rate, for two selected values of the knockoff rate.
-
 
 ```{r M2_two_par_plot, fig.width=8, fig.height=3}
 g1 <- plotTwoPar(allsim.means.m2, "replacement", "conversion", "knockoff", 1e16, ylim=c(0.7, 300))
 g2 <- plotTwoPar(allsim.means.m2, "replacement", "conversion", "knockoff", 1, ylim=c(0.7, 300))
 grid.arrange(g1, g2, ncol=2)
+```
+
+### Heatmaps
+
+Here is the heatmap for knockoff rate fixed at 1e16 (no delay) and 1.
+
+```{r M2_heatmaps, fig.width=10, fig.height=3.5}
+g1 <- plotTwoHeat(allsim.means.m2, "replacement", "conversion", "knockoff", 1e16)
+g2 <- plotTwoHeat(allsim.means.m2, "replacement", "conversion", "knockoff", 1)
+grid.arrange(g1, g2, ncol=2)
+```
+
+### Distribution plots
+
+```{r M2_plot_distribution_grid, fig.width=8, fig.height=12}
+grid.par <- list(replacement=c(0.25, 1, 4), conversion=c(0.25, 1, 4))
+P <- lapply(c(1e16, 1), function(d) {
+  fixed.par <- list(knockoff=d)
+  plotDistributionGrid(allsims, "M2", grid.par, fixed.par, xlim=c(0.01, 500))
+})
+grid.arrange(grobs=P, ncol=1) 
 ```
 
 

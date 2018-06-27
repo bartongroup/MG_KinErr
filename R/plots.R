@@ -105,3 +105,131 @@ plotStateHistory <- function(sc, max.time=NULL) {
   g <- g + geom_hline(yintercept = c(1,2))
   g
 }
+
+
+logScale <- function(show=2) {
+  ticks <- 2:10
+  # define the OOMs (orders of magnitudes)
+  ooms <- 10^(-2:2)
+  breaks <- as.vector(ticks %o% ooms)
+  
+  # select the labels to show
+  if(show == 2) {
+    show.labels <- c(TRUE, FALSE, FALSE, TRUE, FALSE, FALSE, FALSE, FALSE, TRUE)
+  } else if(show == 5) {
+    show.labels <- c(FALSE, FALSE, FALSE, TRUE, FALSE, FALSE, FALSE, FALSE, TRUE)
+  } else if(show == 10) {
+    show.labels <- c(FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, FALSE, TRUE)
+  }
+  labels <- as.character(breaks * show.labels)
+  labels <- gsub("^0$", "", labels)
+  list(labels=labels, breaks=breaks)
+}
+
+plotParameterMedianTime <- function(sim, parnames) {
+  P <- lapply(parnames, function(m) {
+    df <- data.frame(x=as.factor(sim[, m]), y=sim$median.time)
+    s <- logScale()
+    ggplot(df, aes(x, y)) +
+      theme_classic() +
+      geom_boxplot(fill="moccasin", outlier.shape=NA, coef=0) +
+      geom_jitter(width=0.1, height=0) +
+      labs(x=m, y="Median time (min)") +
+      scale_y_log10(labels=s$labels, breaks=s$breaks) +
+      #annotation_logticks(sides = "l") +
+      theme(panel.grid.major.y = element_line(color="grey80")) +
+      xlab(paste(m, "rate"))
+  })
+  grid.arrange(grobs=P, ncol=3)
+}
+
+plotFCsumDet <- function(sim) {
+  sim$fc <- 1/sim$formation + 1/sim$conversion
+  sim$detachment <- as.factor(sim$detachment)
+  s <- logScale()
+  ggplot(sim) +
+    theme_classic() +
+    geom_point(aes(x=fc, y=median.time, colour=detachment)) +
+    geom_line(aes(x=fc, y=median.time, colour=detachment)) +
+    scale_y_log10(labels=s$labels, breaks=s$breaks) +
+    annotation_logticks(sides = "l") +
+    theme(panel.grid.major.y = element_line(color="grey80")) +
+    xlab(expression(1/R[form]~+~1/R[conv]~(min))) +
+    ylab("Median time (min)") +
+    labs(colour = substitute(R[det]~(min^-1))) +
+    scale_color_viridis(discrete=TRUE)
+}
+
+shorten <- list(
+  formation = "form",
+  conversion = "conv",
+  detachment = "det",
+  knockoff = "ko",
+  replacement = "rep"
+)
+
+rlab <- function(s) {
+  t <- 
+  s <- t[[s]]
+  substitute(R[x]~(min^-1), list(x=t[[s]]))
+}
+
+
+plotTwoPar <- function(sim, par.x, par.y, par.f, val.f, val="median.time", val.name="Median time (min)", ylim=c(NA,NA), log.scale=TRUE) {
+  sim <- sim[sim[[par.f]] == val.f, ]
+  sim[[par.y]] <- as.factor(sim[[par.y]])
+  s <- logScale()
+  g <- ggplot(sim) +
+    theme_classic() +
+    geom_point(aes_string(x=par.x, y=val, colour=par.y)) +
+    geom_line(aes_string(x=par.x, y=val, colour=par.y)) +
+    theme(panel.grid.major.y = element_line(color="grey80")) +
+    xlab(substitute(R[x]~(min^-1), list(x=shorten[[par.x]]))) +
+    ylab(val.name) +
+    scale_color_viridis(discrete=TRUE) +
+    ggtitle(substitute(R[p] == v~min^-1, list(p=shorten[[par.f]], v=val.f))) +
+    labs(colour = substitute(R[x]~(min^-1), list(x=shorten[[par.y]])))
+  if(log.scale) {
+    g <- g + 
+      scale_y_log10(labels=s$labels, breaks=s$breaks, limits=ylim) +
+      annotation_logticks(sides = "l")
+  }
+  g
+}
+
+plotTwoHeat<- function(sim, par.x, par.y, par.f, val.f, val="median.time", val.name="Median time (min)") {
+  sim <- sim[sim[[par.f]] == val.f, ]
+  sim[[par.x]] <- as.factor(sim[[par.x]])
+  sim[[par.y]] <- as.factor(sim[[par.y]])
+  ggplot(sim) +
+    geom_tile(aes_string(x=par.x, y=par.y, fill=val)) +
+    xlab(substitute(R[x]~(min^-1), list(x=shorten[[par.x]]))) +
+    ylab(substitute(R[y]~(min^-1), list(y=shorten[[par.y]]))) +
+    labs(fill=val.name) +
+    scale_fill_viridis() +
+    ggtitle(substitute(R[p] == v~min^-1, list(p=shorten[[par.f]], v=val.f)))
+}
+
+
+plotDistributionGrid <- function(sim, model, grid.par, fixed.par, xlim=c(0.2, 500), bins=50) {
+  par.x <- names(grid.par[1])
+  par.y <- names(grid.par[2])
+  par.f <- names(fixed.par)
+  range.x <- grid.par[[1]]
+  range.y <- grid.par[[2]]
+  val.f <- fixed.par[[1]]
+  s <- sim[sim$model == model & sim[[par.x]] %in% range.x & sim[[par.y]] %in% range.y & sim[[par.f]] == val.f,]
+  s$log.time <- log10(s$time)
+  m <- s %>% group_by_(.dots=par.x, par.y) %>% summarise(median=median(time))
+  
+  sc <- logScale(show=10)
+  
+  ggplot(s, aes(x=time, y=..density..)) +
+    geom_histogram(bins=bins) +
+    facet_grid(reformulate(par.x, par.y)) +
+    ggtitle(paste0("x = ", par.x, " rate, y = ", par.y, " rate, ", par.f, " rate = ", val.f)) +
+    labs(x="Time (min)", y="Density") +
+    geom_vline(data=m, aes(xintercept=median), colour="orange2") +
+    scale_x_log10(labels=sc$labels, breaks=sc$breaks, limits=xlim)
+}
+
