@@ -391,7 +391,7 @@ sys.time.fs <- function() {
 # I cannot install this package in conda environment
 # due to conflicts.
 detachedDurationIntervals <- function(sc) {
-  if(sc$model != "M1") return(NULL)
+  if(sc$model != "M1") return(NA)
   sh <- sc$state.history
   sh <- sh[sh$state == "none", ]
   shL <- as.matrix(sh[sh$KT.side == "L" , c("start", "end")])
@@ -405,7 +405,7 @@ detachedDurationIntervals <- function(sc) {
 
 # The same as above, using data.table 
 detachedDuration <- function(sc) {
-  if(sc$model != "M1") return(NULL)
+  if(sc$model != "M1") return(NA)
   sh <- sc$state.history
   sh <- sh[sh$state == "none", ]
   shL <- sh[sh$KT.side == "L" , ]
