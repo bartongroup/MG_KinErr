@@ -197,17 +197,26 @@ plotTwoPar <- function(sim, par.x, par.y, par.f, val.f, val="median.time", val.n
   g
 }
 
-plotTwoHeat<- function(sim, par.x, par.y, par.f, val.f, val="median.time", val.name="Median time (min)") {
+plotTwoHeat<- function(sim, par.x, par.y, par.f, val.f, val="median.time", val.name="Median time (min)", midpoint=NULL, limits=NULL, gtext.size=3, with.legend=TRUE) {
   sim <- sim[sim[[par.f]] == val.f, ]
   sim[[par.x]] <- as.factor(sim[[par.x]])
   sim[[par.y]] <- as.factor(sim[[par.y]])
-  ggplot(sim) +
+  if(is.null(limits)) limits <- c(min(sim[[val]]), max(sim[[val]]))
+  if(is.null(midpoint)) midpoint <- mean(limits)
+  sim$text.colour <- "black"
+  sim[sim[[val]] < midpoint, "text.colour"] <- "white"
+  sim$lab <- signif(sim[[val]], 2)
+  g <- ggplot(sim) +
     geom_tile(aes_string(x=par.x, y=par.y, fill=val)) +
     xlab(substitute(R[x]~(min^-1), list(x=shorten[[par.x]]))) +
     ylab(substitute(R[y]~(min^-1), list(y=shorten[[par.y]]))) +
     labs(fill=val.name) +
-    scale_fill_viridis() +
-    ggtitle(substitute(R[p] == v~min^-1, list(p=shorten[[par.f]], v=val.f)))
+    #scale_fill_viridis() +
+    scale_fill_gradientn(colours=c("blue4", "gold", "red"), values=c(0, midpoint, 1), limits=limits) +
+    ggtitle(substitute(R[p] == v~min^-1, list(p=shorten[[par.f]], v=val.f))) +
+    geom_text(aes_string(x=par.x, y=par.y, label="lab"), size=gtext.size, colour="palegreen")
+  if(!with.legend) g <- g + theme(legend.position = "none")
+  g
 }
 
 
