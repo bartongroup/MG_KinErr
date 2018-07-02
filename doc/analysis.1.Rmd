@@ -204,7 +204,7 @@ mean.sliding.time <-  mean(sliding.time[dropoff.time == 0])
 rm(kt)
 ```
 
-It contains several statistics for each kinetochore, over many simulations. Among them is the total sliding time. This is not exactly what we want, as this is the accumulated time, so includes KTs that were detached and re-attached. But the simulation also recorded the total drop-off time, that is the time the KT spend while being knocked-off before being re-attached. We select only data where total dropoff time is zero, which corresponds to KTs that have not been knocked-off. The mean sliding time from this file is `r round(mean.sliding.time, 2)` minutes, which gives the conversion rate of `r round(1/mean.sliding.time, 2)` per min.
+It contains several statistics for each kinetochore, over many simulations. Among them is the total sliding time. This is not exactly what we want, as this is the accumulated time, so includes KTs that were detached and re-attached. But the simulation also recorded the total drop-off time, that is the time the KT spend while being knocked-off before being re-attached. We select only data where total drop-off time is zero, which corresponds to KTs that have not been knocked-off. The mean sliding time from this file is `r round(mean.sliding.time, 2)` minutes, which gives the conversion rate of `r round(1/mean.sliding.time, 2)` per min.
 
 ## Tests
 

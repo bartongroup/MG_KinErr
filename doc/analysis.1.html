@@ -195,7 +195,7 @@ pre code, pre, code {
 <h2>Conversion rate</h2>
 <p>We estimate conversion rate (from lateral to end-on) from our old simulations of kinetochore-microtubule interaction. We use the latest results from the default parameter model in this file:</p>
 <pre><code>## [1] &quot;/home/mgierlinski/projects/kinetube/varcap_grid/varcap8_slr2_short0.2_long0.5_ktd0.1_mtd0.03_rf0.3_resp0.6_inimt10_tau0.5_beta0.7/kinetube_all_kt.dat&quot;</code></pre>
-<p>It contains several statistics for each kinetochore, over many simulations. Among them is the total sliding time. This is not exactly what we want, as this is the accumulated time, so includes KT that were detached and re-attached. But the simulation also recorded the total drop-off time, that is the time the KT spend while being knocked-off before being re-attached. We select only data where total dropoff time is zero, which corresponds to KTs that have not been knocked-off. The mean sliding time from this file is 0.67 minutes, which gives the conversion rate of 1.5 per min.</p>
+<p>It contains several statistics for each kinetochore, over many simulations. Among them is the total sliding time. This is not exactly what we want, as this is the accumulated time, so includes KTs that were detached and re-attached. But the simulation also recorded the total drop-off time, that is the time the KT spend while being knocked-off before being re-attached. We select only data where total drop-off time is zero, which corresponds to KTs that have not been knocked-off. The mean sliding time from this file is 0.67 minutes, which gives the conversion rate of 1.5 per min.</p>
 </div>
 <div id="tests" class="section level2">
 <h2>Tests</h2>
