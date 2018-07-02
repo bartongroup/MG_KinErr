@@ -187,7 +187,7 @@ plotSisterChromatids(sc)
 
 In this model, the detachment rate does not come into effect.
 
-### Conversion rate
+## Conversion rate
 
 We estimate conversion rate (from lateral to end-on) from our old simulations of kinetochore-microtubule interaction. We use the latest results from the default parameter model in this file:
 
@@ -204,7 +204,7 @@ mean.sliding.time <-  mean(sliding.time[dropoff.time == 0])
 rm(kt)
 ```
 
-It contains several statistics for each kinetochore, over many simulations. Among them is the total sliding time. This is not exactly what we want, as this is the accumulated time, so includes KT that were detached and re-attached. But the simulation also recorded the total drop-off time, that is the time the KT spend while being knocked-off before being re-attached. We select only data where total dropoff time is zero, which corresponds to KTs that have not been knocked-off. The mean sliding time from this file is `r round(mean.sliding.time, 2)` minutes, which gives the conversion rate of `r round(1/mean.sliding.time, 2)` per min.
+It contains several statistics for each kinetochore, over many simulations. Among them is the total sliding time. This is not exactly what we want, as this is the accumulated time, so includes KTs that were detached and re-attached. But the simulation also recorded the total drop-off time, that is the time the KT spend while being knocked-off before being re-attached. We select only data where total dropoff time is zero, which corresponds to KTs that have not been knocked-off. The mean sliding time from this file is `r round(mean.sliding.time, 2)` minutes, which gives the conversion rate of `r round(1/mean.sliding.time, 2)` per min.
 
 ## Tests
 
@@ -479,16 +479,16 @@ This is because conversion always follows formation and what matters is the tota
 plotFCsumDet(allsim.means.m1) 
 ```
 
-We need high formation and conversion rates, and, perhaps, a low detachment rate.
+For quick error correction we need high formation and conversion rates, and not very low detachment rate.
 
 ### Heatmaps
 
-Here is a heatmap of formation versus conversion, for fixed detachment rates of 0.125 and 1:
+Here is a heatmap of formation rate versus conversion rate, for fixed detachment rates of 0.125 and 1. The colour scale and the numbers in boxes show the median simulation time.
 
-```{r M1_heatmaps, fig.width=10, fig.height=3.5}
-g1 <- plotTwoHeat(allsim.means.m1, "formation", "conversion", "detachment", 0.125)
-g2 <- plotTwoHeat(allsim.means.m1, "formation", "conversion", "detachment", 1)
-grid.arrange(g1, g2, ncol=2)
+```{r M1_heatmaps, fig.width=8, fig.height=3.5}
+g1 <- plotTwoHeat(allsim.means.m1, "formation", "conversion", "detachment", 0.125, limits=c(0,210), midpoint=0.2, with.legend=FALSE)
+g2 <- plotTwoHeat(allsim.means.m1, "formation", "conversion", "detachment", 1, limits=c(0,210), midpoint=0.2)
+grid.arrange(g1, g2, ncol=2, widths=c(40,60)) 
 ```
 
 ### Distribution plots
@@ -514,6 +514,8 @@ g1 <- plotTwoPar(allsim.means.m1, "detachment", "formation", "conversion", 2, va
 g2 <- plotTwoPar(allsim.means.m1, "formation", "conversion", "detachment", 2, val="median.detached.fraction", val.name="Median detached fraction", log.scale = FALSE)
 grid.arrange(g1, g2, ncol=2)
 ```
+
+Detached periods are getting long for small formation rate and high detachment rate (as expected).
 
 ### Examples
 
@@ -573,15 +575,17 @@ grid.arrange(g1, g2, ncol=2)
 
 Here is the heatmap for knockoff rate fixed at 1e16 (no delay) and 1.
 
-```{r M2_heatmaps, fig.width=10, fig.height=3.5}
-g1 <- plotTwoHeat(allsim.means.m2, "replacement", "conversion", "knockoff", 1e16)
-g2 <- plotTwoHeat(allsim.means.m2, "replacement", "conversion", "knockoff", 1)
-grid.arrange(g1, g2, ncol=2)
+```{r M2_heatmaps, fig.width=8, fig.height=3.5}
+g1 <- plotTwoHeat(allsim.means.m2, "replacement", "conversion", "knockoff", 1e16, limits=c(0,250), midpoint=0.2, with.legend = FALSE)
+g2 <- plotTwoHeat(allsim.means.m2, "replacement", "conversion", "knockoff", 1, limits=c(0,250), midpoint=0.2)
+grid.arrange(g1, g2, ncol=2, widths=c(40,60)) 
 ```
+
+Very quick error correction times are achieved for high conversion rates. The knock-off delay has detrimental effect on these times.
 
 ### Distribution plots
 
-```{r M2_plot_distribution_grid, fig.width=8, fig.height=12}
+```{r M2_plot_distribution_grid, fig.width=8, fig.height=8}
 grid.par <- list(replacement=c(0.25, 1, 4), conversion=c(0.25, 1, 4))
 P <- lapply(c(1e16, 1), function(d) {
   fixed.par <- list(knockoff=d)
@@ -591,7 +595,7 @@ grid.arrange(grobs=P, ncol=1)
 ```
 
 
-### Examples
+### Examples (instant knock-off)
 
 A few examples of simulation runs for a fast model 2 (that is $R_\mathrm{repl}=2$, $R_\mathrm{conv}=2$ and $R_\mathrm{ko}=1e16$):
 
@@ -603,7 +607,9 @@ for(i in 1:5) {
 } 
 ```
 
-and examples as above, but with $R_\mathrm{ko}=1$:
+### Examples (knock-off delay)
+
+Here are examples as above, but with $R_\mathrm{ko}=1$:
 
 ```{r M2_fast_simulations_examples_ko1, fig.width=10, fig.height=1.5}
 set.seed(12)
@@ -616,7 +622,7 @@ for(i in 1:5) {
 
 ## 16 chromosomes
 
-The model described in this document simulates error correction for one chromosome (sister chromatids). In yeast, we have 16 chromosomes. What is the total time required to correct all chromosomes and establish proper bi-orientation? If error correction for all of them is done in parallel, then the total time is the maximum time from one simulation. We can model this by randomly sampling 16 timelines from our simulation results and finding the maximum time. NOTE: this is a very conservative approach assuming that *all* chromosomes start in an erroneous configuration.
+The model described in this document simulates error correction for one chromosome (sister chromatids). In yeast, we have 16 chromosomes. What is the total time required to correct all chromosomes and establish proper bi-orientation? If error correction for all of them is done in parallel, then the total time is the longest of the individual times. We can model this by randomly sampling 16 timelines from our simulation results and finding the maximum time. NOTE: this is a very conservative approach assuming that *all* chromosomes start in an erroneous configuration.
 
 ```{r max_16_chromosomes_function}
 maxChromosomes <- function(sim, model, pars, n.chromosomes=16, n.boot=1000, n.cores=7) {
@@ -640,10 +646,12 @@ ggplot(data.frame(x=m1.max)) +
 }
 ```
 
-We select data with the following parameters:
+We select data with the following parameters (units are 1 / minute). They correspond to rather fast error correction times of a few minutes.
 
-- M1: formation=2, conversion=2, detachment=0.5
-- M2: replacement=2, conversion=2, knockoff=1e16
+- M1: $R_\mathrm{form} = 2$, $R_\mathrm{conv} = 2$, $R_\mathrm{det} = 0.5$
+- M2: $R_\mathrm{repl} = 2$, $R_\mathrm{conv} = 2$, $R_\mathrm{ko} = 10^{16}$
+
+These plots show the distribution of the maximum time across 16 randomly selected samples:
 
 ```{r M1_max_chr, fig.width=6, fig.height=3}
 g1 <- plotMaxChromosomes(allsims, "M1", list(formation=2, conversion=2, detachment=0.5))
