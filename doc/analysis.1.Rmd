@@ -486,9 +486,15 @@ For quick error correction we need high formation and conversion rates, and not 
 Here is a heatmap of formation rate versus conversion rate, for fixed detachment rates of 0.125 and 1. The colour scale and the numbers in boxes show the median simulation time.
 
 ```{r M1_heatmaps, fig.width=8, fig.height=3.5}
-g1 <- plotTwoHeat(allsim.means.m1, "formation", "conversion", "detachment", 0.125, limits=c(0,210), midpoint=0.2, with.legend=FALSE)
-g2 <- plotTwoHeat(allsim.means.m1, "formation", "conversion", "detachment", 1, limits=c(0,210), midpoint=0.2)
+g1 <- plotTwoHeat(allsim.means.m1, "formation", "conversion", "detachment", 0.125, limits=c(0,215), midpoint=0.2, with.legend=FALSE)
+g2 <- plotTwoHeat(allsim.means.m1, "formation", "conversion", "detachment", 1, limits=c(0,215), midpoint=0.2)
 grid.arrange(g1, g2, ncol=2, widths=c(40,60)) 
+```
+
+The next heatmap shows conversion rate fixed at our best estimate of ~2 per min.
+
+```{r M1_heatmap_conv2, fig.width=4.7, fig.height=3.5}
+plotTwoHeat(allsim.means.m1, "formation", "detachment", "conversion", 2, limits=c(0,215), midpoint=0.2)
 ```
 
 ### Distribution plots
@@ -582,6 +588,13 @@ grid.arrange(g1, g2, ncol=2, widths=c(40,60))
 ```
 
 Very quick error correction times are achieved for high conversion rates. The knock-off delay has detrimental effect on these times.
+
+The next heatmap shows conversion rate fixed at our best estimate of ~2 per min.
+
+```{r M2_heatmap_conv2, fig.width=4.7, fig.height=3.5}
+plotTwoHeat(allsim.means.m2, "replacement", "knockoff", "conversion", 2, limits=c(0,250), midpoint=0.2)
+```
+
 
 ### Distribution plots
 

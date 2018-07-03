@@ -124,3 +124,7 @@ Managed to extract the conversion rate from one of the old big simulation runs. 
 # 2/07/2018
 
 Editing report. Improving figures.
+
+# 3/07/2018
+
+Added new heatmaps for conversion rate fixed at near our best guess of 2 / min.
