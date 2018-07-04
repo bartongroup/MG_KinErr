@@ -128,3 +128,21 @@ Editing report. Improving figures.
 # 3/07/2018
 
 Added new heatmaps for conversion rate fixed at near our best guess of 2 / min.
+
+# 4/07/2018
+
+Meeting with Tomo and Hari. To do:
+
+1. Conversion rate from simulations: we need to avoid sliding that ends up in the pole. If not possible, I might need to run the simulations again. Don't need millions, should be fairly fast to do.
+
+2. New default parameters (two sets per model):
+
+- M1: form = 0.5 or 1, cond = 1.5, det = 1
+- M2: repl = 0.5 or 1, ko = 10, conv = 1.5
+
+Redo figures for time distributions and 16 chromosomes time distributions.
+
+3. How far does the KT go when it is detached (that is both sister KTs detached at the same time, otherwise they are not free)? We can get it from Gaussian diffusion and $MSD(t) = \sigma_t^2 = 6Dt$.
+
+- find the distribution of individual full detachment times
+- find the corresponding distribution of $\sigma_t$
