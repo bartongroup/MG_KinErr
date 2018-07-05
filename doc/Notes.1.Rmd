@@ -137,7 +137,7 @@ Meeting with Tomo and Hari. To do:
 
 2. New default parameters (two sets per model):
 
-- M1: form = 0.5 or 1, cond = 1.5, det = 1
+- M1: form = 0.5 or 1, conv = 1.5, det = 1
 - M2: repl = 0.5 or 1, ko = 10, conv = 1.5
 
 Redo figures for time distributions and 16 chromosomes time distributions.
@@ -146,3 +146,9 @@ Redo figures for time distributions and 16 chromosomes time distributions.
 
 - find the distribution of individual full detachment times
 - find the corresponding distribution of $\sigma_t$
+
+# 5/07/2018
+
+Working on the above to-do list. I've re-done the simulation scripts to store individual detachment times. This changed data structures and required lots of modifications in the code in the document.
+
+Individual detachment now included. Also, calculated $\sigma_t$ for Gaussian diffusion.

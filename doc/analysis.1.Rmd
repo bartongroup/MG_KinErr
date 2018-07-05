@@ -51,6 +51,7 @@ Notebooks: [1](http://www.compbio.dundee.ac.uk/user/mgierlinski/kinerr/doc/Notes
 ```{r setup, cache=FALSE, echo=FALSE}
 source("../R/setup.R")
 source("../R/lib.R")
+source("../R/simdat.R")
 source("../R/plots.R")
 source("../R/tests.R")
 ```
@@ -94,35 +95,6 @@ The simulation is a sequence of events. The time of the next event is randomly d
 Here we assume that the end-on detachment and formation of the lateral attachment are independent. For illustration purposes, we show how the model works on the left kinetochore, but obviously, it works on both. Also, microtubules can reach kinetochores at the opposite side. The sequence of events in this model is as follows.
 
 Let's start with an unattached microtubule.
-
-```{r default_parameters}
-defaultParameters <- function() {
-  parametersRates(
-    formation = 0.5,
-    conversion = 2,
-    detachment = 1,
-    replacement = 0.5,
-    knockoff = 1e16
-  )
-}
-M1.parnames <- c("formation", "conversion", "detachment")
-M2.parnames <- c("replacement", "knockoff", "conversion")
-
-defPars <- function(model) {
-  pars <- defaultParameters()
-  if(model == "M1") {
-    parnames = M1.parnames
-  } else {
-    parnames = M2.parnames
-  }
-  P <- lapply(parnames, function(pn) {
-    data.frame(parameter=pn, value=pars[[pn]]$value$rate)
-  })
-  do.call(rbind, P)
-}
-```
-
-
 
 ```{r plot_lateral_attachement, fig.width=4, fig.height=2}
 par <- defaultParameters()
@@ -357,65 +329,108 @@ plotStateHistory(sc)
 
 ## Default parameters
 
-```{r read_def_sims}
-defsims <- readRDS(paste0(projectDir, "data/sim_defpar.rds"))
+```{r read_all_sims}
+allsims <- readRDS(paste0(projectDir, "data/sim_allpar.rds"))
+time.m1 <- allsims$M1$time
+time.m2 <- allsims$M2$time
+det.m1 <- allsims$M1$detached
+rm(allsims)
+```
+
+```{r select_defsim}
+deftime.m1 <- defSelect(time.m1, "M1")
+deftime.m2 <- defSelect(time.m2, "M2")
 ```
 
 ### Model 1
 
-We run `r N(as.integer(nrow(defsims) / nlevels(defsims$model)))` simulations for the default parameters for model 1:
+Parameter set 1:
 
-```{r default_parameters_m1}
-myKable(defPars("M1"))
+```{r default_parameters_m1.1}
+myKable(defParsTab("M1", 1))
 ```
 
-### Model 2
+Parameter set 2:
 
-and for model 2:
-
-```{r default_parameters_m2}
-myKable(defPars("M2"))
+```{r default_parameters_m1.2}
+myKable(defParsTab("M1", 2))
 ```
 
-Here is the distribution of simulation time.
+Here is the distribution of simulation time. Panels show parameter set 1 and 2.
 
-```{r simulation_time_plot, fig.width=6, fig.height=3}
-ggplot(defsims, aes(time)) +
-  geom_histogram(bins=100) +
-  facet_grid(. ~ model) +
-  xlim(0, 40) +
-  labs(x = "Time (min)", y = "Count")
+```{r defpar_plot_function}
+defparPlot <- function(deftime) {
+  ggplot(deftime, aes(time)) +
+    geom_histogram(bins=60) +
+    facet_grid(. ~ set) +
+    xlim(0, 40) +
+    labs(x = "Time (min)", y = "Count")
+}
+
+defparStat <- function(deftime) {
+  P <- lapply(1:2, function(set) {
+    x <- deftime[deftime$set == set,]
+    data.frame(
+      set = set,
+      mean = mean(x$time),
+      median = median(x$time)
+    )
+  })
+  df <- do.call(rbind, P)
+}
+```
+
+```{r m1_defpar_plot, fig.width=6, fig.height=3}
+defparPlot(deftime.m1)
 ```
 
 Here is the mean and median simulation time for both models:
 
-```{r simulation_median_time}
-M <- lapply(c("mean", "median"), function(fun) {
-  t <- t(as.matrix(tapply(defsims$time, defsims$model, fun)))
-  rownames(t) <- fun
-  round(t, 2)
-})
-df <- do.call(rbind, M)
-myKable(df, row.names = TRUE)
+```{r m1_defpar_stats}
+df <- defparStat(deftime.m1)
+myKable(df)
 ```
+
+
+
+### Model 2
+
+Parameter set 1:
+
+```{r default_parameters_m2.1}
+myKable(defParsTab("M2", 1))
+```
+
+Parameter set 2:
+
+```{r default_parameters_m2.2}
+myKable(defParsTab("M2", 2))
+```
+
+Here is the distribution of simulation time. Panels show parameter set 1 and 2.
+
+```{r m2_defpar_plot, fig.width=6, fig.height=3}
+defparPlot(deftime.m2)
+```
+
+Here is the mean and median simulation time for both models:
+
+```{r m2_defpar_stats}
+df <- defparStat(deftime.m2)
+myKable(df)
+```
+
+
 
 ## Model 1
 
-```{r read_all_sims}
-allsims <- readRDS(paste0(projectDir, "data/sim_allpar.rds"))
-```
-
-```{r all_sims_mean}
-allsim.means <- allsims %>% group_by(model, formation, conversion, detachment, knockoff, replacement) %>% summarise(mean.time = mean(time), se.time = sd(time) / sqrt(n()), median.time=median(time), median.detached=median(detached), median.detached.fraction=median(detached/time), n=n()) %>% as.data.frame
-allsim.means <- allsim.means[order(allsim.means$mean.time), c(1:(ncol(allsim.means)-1))]
-allsim.means.m1 <- allsim.means[allsim.means$model == "M1", c(M1.parnames, "mean.time", "se.time", "median.time", "median.detached.fraction")]
-allsim.means.m2 <- allsim.means[allsim.means$model == "M2", c(M2.parnames, "mean.time", "se.time", "median.time", "median.detached.fraction")]
+```{r m1_time_stats}
+mtime.m1 <- time.m1 %>% group_by(formation, conversion, detachment) %>% summarise(mean.time = mean(time), se.time = sd(time) / sqrt(n()), median.time=median(time), median.detached.fraction=median(detached.duration/time), n=n()) %>% arrange(median.time) %>% as.data.frame
 ```
 
 
 ```{r simtime_functions}
-getParameterGrid <- function(sim, model, parnames) {
-  sim <- sim[sim$model == model, ]
+getParameterGrid <- function(sim, parnames) {
   P <- setNames(lapply(parnames, function(p) {
     paste(sort(unique(sim[, p])), collapse=", ")
   }), paste(parnames, "rate"))
@@ -426,22 +441,22 @@ getParameterGrid <- function(sim, model, parnames) {
 We run the simulation across a grid of parameters. This table show the rates used:
 
 ```{r M1_parameter_grid}
-df <- getParameterGrid(allsim.means, "M1", M1.parnames) 
+df <- getParameterGrid(mtime.m1, M1.parnames) 
 myKable(df, row.names = TRUE)
 ```
 
-Simply, we start from the default values and vary each parameter by factor two, up and down (except for knockoff). For each set we run `r N(as.integer(nrow(allsims) / nrow(allsim.means)))` simulations.
+Simply, we start from the default values and vary each parameter by factor two, up and down (except for knockoff). For each set we run `r N(mtime.m1[1, "n"])` simulations.
 
 ### Result table
 
 The table below shows results ordered by the mean simulation time.
 
 ```{r M1_means_table}
-kable(allsim.means.m1, format="html", row.names=FALSE, digits=2) %>% kable_styling("condensed", full_width = FALSE, position="left", font_size=12) %>% scroll_box(width="700px", height = "400px") 
+kable(mtime.m1, format="html", row.names=FALSE, digits=2) %>% kable_styling("condensed", full_width = FALSE, position="left", font_size=12) %>% scroll_box(width="700px", height = "400px") 
 ```
 
 ```{r M1_all_sims_linear_model, eval=FALSE}
-fit1 <- lm(median.time ~ formation + conversion + detachment, data=allsim.means.m1)
+fit1 <- lm(median.time ~ formation + conversion + detachment, data=mtime.m1)
 summary(fit1)
 ```
 
@@ -450,7 +465,7 @@ summary(fit1)
 Let's plot the dependence of the median time against each parameter. These plots show a projection of all data onto one parameter dimension.
 
 ```{r M1_all_sims_mean_plot, fig.width=9, fig.height=3}
-plotParameterMedianTime(allsim.means.m1, M1.parnames)
+plotParameterMedianTime(mtime.m1, M1.parnames)
 ```
 
 Since we use quite wide range in each parameter, these plots are very scattered (vertically). This is because for one fixed value of a parameter (e.g. detachment rate of 4 in the right-hand panel) there is a large spread of simulation times due to the range of the other two parameters. These plots are not very informative, let's try something different.
@@ -460,23 +475,23 @@ Since we use quite wide range in each parameter, these plots are very scattered 
 Here is a plot of median time as a function of formation rate and conversion rate, for two selected values of the detachment rate.
 
 ```{r M1_two_par_plot, fig.width=8, fig.height=3}
-g1 <- plotTwoPar(allsim.means.m1, "formation", "conversion", "detachment", 0.25, ylim=c(1, 400))
-g2 <- plotTwoPar(allsim.means.m1, "formation", "conversion", "detachment", 2, ylim=c(1, 400))
+g1 <- plotTwoPar(mtime.m1, "formation", "conversion", "detachment", 0.25, ylim=c(1, 400))
+g2 <- plotTwoPar(mtime.m1, "formation", "conversion", "detachment", 2, ylim=c(1, 400))
 grid.arrange(g1, g2, ncol=2)
 ```
 
 Note that conversion and formation are symmetric, the plots look the same if we swap them.
 
 ```{r M1_two_par_plot_swapped, fig.width=8, fig.height=3}
-g1 <- plotTwoPar(allsim.means.m1, "conversion", "formation", "detachment", 0.25, ylim=c(1, 400))
-g2 <- plotTwoPar(allsim.means.m1, "conversion", "formation", "detachment", 2, ylim=c(1, 400))
+g1 <- plotTwoPar(mtime.m1, "conversion", "formation", "detachment", 0.25, ylim=c(1, 400))
+g2 <- plotTwoPar(mtime.m1, "conversion", "formation", "detachment", 2, ylim=c(1, 400))
 grid.arrange(g1, g2, ncol=2)
 ```
 
 This is because conversion always follows formation and what matters is the total duration of these two. Since our parameters are rates, mean formation and conversion times are $1/R_\mathrm{form}$ and $1/R_\mathrm{conv}$, respectively. Below, we plot the sum of both quantities on the x-axis and the median simulation time on the y-axis. Colour correspond to different detachment rates.
 
 ```{r M1_fc_det_plot, fig.width=5, fig.height=4}
-plotFCsumDet(allsim.means.m1) 
+plotFCsumDet(mtime.m1) 
 ```
 
 For quick error correction we need high formation and conversion rates, and not very low detachment rate.
@@ -486,15 +501,15 @@ For quick error correction we need high formation and conversion rates, and not 
 Here is a heatmap of formation rate versus conversion rate, for fixed detachment rates of 0.125 and 1. The colour scale and the numbers in boxes show the median simulation time.
 
 ```{r M1_heatmaps, fig.width=8, fig.height=3.5}
-g1 <- plotTwoHeat(allsim.means.m1, "formation", "conversion", "detachment", 0.125, limits=c(0,215), midpoint=0.2, with.legend=FALSE)
-g2 <- plotTwoHeat(allsim.means.m1, "formation", "conversion", "detachment", 1, limits=c(0,215), midpoint=0.2)
+g1 <- plotTwoHeat(mtime.m1, "formation", "conversion", "detachment", 0.125, limits=c(0,215), midpoint=0.2, with.legend=FALSE)
+g2 <- plotTwoHeat(mtime.m1, "formation", "conversion", "detachment", 1, limits=c(0,215), midpoint=0.2)
 grid.arrange(g1, g2, ncol=2, widths=c(40,60)) 
 ```
 
 The next heatmap shows conversion rate fixed at our best estimate of ~2 per min.
 
 ```{r M1_heatmap_conv2, fig.width=4.7, fig.height=3.5}
-plotTwoHeat(allsim.means.m1, "formation", "detachment", "conversion", 2, limits=c(0,215), midpoint=0.2)
+plotTwoHeat(mtime.m1, "formation", "detachment", "conversion", 2, limits=c(0,215), midpoint=0.2)
 ```
 
 ### Distribution plots
@@ -505,7 +520,7 @@ Here we plot distribution of individual simulation times for several sets of par
 grid.par <- list(formation=c(0.25, 1, 4), conversion=c(0.25, 1, 4))
 P <- lapply(c(0.125, 0.5, 2), function(d) {
   fixed.par <- list(detachment=d)
-  plotDistributionGrid(allsims, "M1", grid.par, fixed.par)
+  plotDistributionGrid(time.m1, grid.par, fixed.par)
 })
 grid.arrange(grobs=P, ncol=1)
 ```
@@ -516,12 +531,33 @@ grid.arrange(grobs=P, ncol=1)
 Next, we investigate how long the system spends in configuration where both kinetochores are detached at the same time. We calculate the fraction of the total time spend as fully detached. Here are plots showing the detached fraction across the range of parameters.
 
 ```{r detached_periods, fig.width=8, fig.height=3}
-g1 <- plotTwoPar(allsim.means.m1, "detachment", "formation", "conversion", 2, val="median.detached.fraction", val.name="Median detached fraction", log.scale = FALSE)
-g2 <- plotTwoPar(allsim.means.m1, "formation", "conversion", "detachment", 2, val="median.detached.fraction", val.name="Median detached fraction", log.scale = FALSE)
+g1 <- plotTwoPar(mtime.m1, "detachment", "formation", "conversion", 2, val="median.detached.fraction", val.name="Median detached fraction", log.scale = FALSE)
+g2 <- plotTwoPar(mtime.m1, "formation", "conversion", "detachment", 2, val="median.detached.fraction", val.name="Median detached fraction", log.scale = FALSE)
 grid.arrange(g1, g2, ncol=2)
 ```
 
 Detached periods are getting long for small formation rate and high detachment rate (as expected).
+
+Below are plots of distribution of individual detachment times. We notice that they depend almost exclusively on the formation rate.
+
+```{r detached_distribution, fig.width=8, fig.height=12}
+grid.par <- list(formation=c(0.25, 1, 4), conversion=c(0.25, 1.5, 4))
+P <- lapply(c(0.125, 0.5, 2), function(d) {
+  fixed.par <- list(detachment=d)
+  plotDistributionGrid(det.m1, grid.par, fixed.par, value="detached.time", xlim=c(0.002, 20))
+})
+grid.arrange(grobs=P, ncol=1)
+```
+
+Next, we find the diffusion range, defined as $\sigma = \sqrt{6 D t}$, where $D = 0.1~\mu \mathrm{m}^2\mathrm{min}^{-1}$ is the diffusion coefficient ant $t$ is the detachment time.
+
+```{r detached_distribution_distance, fig.width=8, fig.height=3}
+det.m1$sigma = sqrt(6 * 0.1 * det.m1$detached.time)
+grid.par <- list(formation=c(0.25, 1, 4), conversion=c(1.5))
+fixed.par <- list(detachment=c(1))
+plotDistributionGrid(det.m1, grid.par, fixed.par, value="sigma", xlab=expression(sigma~(mu*m)), xlim=c(0.005, 3))
+```
+
 
 ### Examples
 
@@ -542,29 +578,34 @@ for(i in 1:5) {
 
 ## Model 2
 
+```{r m2_time_stats}
+mtime.m2 <- time.m2 %>% group_by(replacement, knockoff, conversion) %>% summarise(mean.time = mean(time), se.time = sd(time) / sqrt(n()), median.time=median(time), median.detached.fraction=median(detached.duration/time), n=n()) %>% arrange(median.time) %>% as.data.frame
+```
+
+
 Here is the grid of parameters for model 2:
 
 ```{r parameter_grid_m2}
-df <- getParameterGrid(allsim.means, "M2", M2.parnames)
+df <- getParameterGrid(mtime.m2, M2.parnames)
 myKable(df, row.names = TRUE) 
 ```
 
 ### Result table
 
 ```{r all_sims_show_mean_m2}
-kable(allsim.means.m2, format="html", row.names=FALSE, digits=2) %>% kable_styling("condensed", full_width = FALSE, position="left", font_size=12) %>% scroll_box(width="700px", height = "400px") 
+kable(mtime.m2, format="html", row.names=FALSE, digits=2) %>% kable_styling("condensed", full_width = FALSE, position="left", font_size=12) %>% scroll_box(width="700px", height = "400px") 
 ```
 
 
 ```{r all_sims_linear_model_m2, eval=FALSE}
-fit1 <- lm(mean.time ~ replacement + knockoff + conversion, data=allsim.means.m2)
+fit1 <- lm(mean.time ~ replacement + knockoff + conversion, data=mtime.m2)
 summary(fit1)
 ```
 
 ### Projection plots
 
 ```{r all_sims_mean_plot_m2, fig.width=8, fig.height=3}
-plotParameterMedianTime(allsim.means.m2, M2.parnames)
+plotParameterMedianTime(mtime.m2, M2.parnames)
 ```
 
 ### Line plots
@@ -572,8 +613,8 @@ plotParameterMedianTime(allsim.means.m2, M2.parnames)
 Here is a plot of median time as a function of replacement rate and conversion rate, for two selected values of the knockoff rate.
 
 ```{r M2_two_par_plot, fig.width=8, fig.height=3}
-g1 <- plotTwoPar(allsim.means.m2, "replacement", "conversion", "knockoff", 1e16, ylim=c(0.7, 300))
-g2 <- plotTwoPar(allsim.means.m2, "replacement", "conversion", "knockoff", 1, ylim=c(0.7, 300))
+g1 <- plotTwoPar(mtime.m2, "replacement", "conversion", "knockoff", 1e16, ylim=c(0.7, 300))
+g2 <- plotTwoPar(mtime.m2, "replacement", "conversion", "knockoff", 1, ylim=c(0.7, 300))
 grid.arrange(g1, g2, ncol=2)
 ```
 
@@ -582,8 +623,8 @@ grid.arrange(g1, g2, ncol=2)
 Here is the heatmap for knockoff rate fixed at 1e16 (no delay) and 1.
 
 ```{r M2_heatmaps, fig.width=8, fig.height=3.5}
-g1 <- plotTwoHeat(allsim.means.m2, "replacement", "conversion", "knockoff", 1e16, limits=c(0,250), midpoint=0.2, with.legend = FALSE)
-g2 <- plotTwoHeat(allsim.means.m2, "replacement", "conversion", "knockoff", 1, limits=c(0,250), midpoint=0.2)
+g1 <- plotTwoHeat(mtime.m2, "replacement", "conversion", "knockoff", 1e16, limits=c(0,250), midpoint=0.2, with.legend = FALSE)
+g2 <- plotTwoHeat(mtime.m2, "replacement", "conversion", "knockoff", 1, limits=c(0,250), midpoint=0.2)
 grid.arrange(g1, g2, ncol=2, widths=c(40,60)) 
 ```
 
@@ -592,7 +633,7 @@ Very quick error correction times are achieved for high conversion rates. The kn
 The next heatmap shows conversion rate fixed at our best estimate of ~2 per min.
 
 ```{r M2_heatmap_conv2, fig.width=4.7, fig.height=3.5}
-plotTwoHeat(allsim.means.m2, "replacement", "knockoff", "conversion", 2, limits=c(0,250), midpoint=0.2)
+plotTwoHeat(mtime.m2, "replacement", "knockoff", "conversion", 2, limits=c(0,250), midpoint=0.2)
 ```
 
 
@@ -602,7 +643,7 @@ plotTwoHeat(allsim.means.m2, "replacement", "knockoff", "conversion", 2, limits=
 grid.par <- list(replacement=c(0.25, 1, 4), conversion=c(0.25, 1, 4))
 P <- lapply(c(1e16, 1), function(d) {
   fixed.par <- list(knockoff=d)
-  plotDistributionGrid(allsims, "M2", grid.par, fixed.par, xlim=c(0.01, 500))
+  plotDistributionGrid(time.m2, grid.par, fixed.par, xlim=c(0.01, 500))
 })
 grid.arrange(grobs=P, ncol=1) 
 ```
@@ -638,8 +679,7 @@ for(i in 1:5) {
 The model described in this document simulates error correction for one chromosome (sister chromatids). In yeast, we have 16 chromosomes. What is the total time required to correct all chromosomes and establish proper bi-orientation? If error correction for all of them is done in parallel, then the total time is the longest of the individual times. We can model this by randomly sampling 16 timelines from our simulation results and finding the maximum time. NOTE: this is a very conservative approach assuming that *all* chromosomes start in an erroneous configuration.
 
 ```{r max_16_chromosomes_function}
-maxChromosomes <- function(sim, model, pars, n.chromosomes=16, n.boot=1000, n.cores=7) {
-  sim <- sim[sim$model == model, ]
+maxChromosomes <- function(sim, pars, n.chromosomes=16, n.boot=1000, n.cores=7) {
   for(p in names(pars)) {
     val <- pars[[p]]
     sim <- sim[sim[[p]] == val,]
@@ -651,11 +691,11 @@ maxChromosomes <- function(sim, model, pars, n.chromosomes=16, n.boot=1000, n.co
 }
 
 plotMaxChromosomes <- function(sim, model, pars) {
-m1.max <- maxChromosomes(sim, model, pars)
-breaks <- seq(0, 20, 0.5)
-ggplot(data.frame(x=m1.max)) +
-  geom_histogram(aes(x=x, y=..density..), breaks=breaks) +
-  labs(title=paste("Model", model), x="Max time (min)", y="Density")
+  m1.max <- maxChromosomes(sim, pars)
+  breaks <- seq(0, 20, 0.5)
+  ggplot(data.frame(x=m1.max)) +
+    geom_histogram(aes(x=x, y=..density..), breaks=breaks) +
+    labs(title=paste("Model", model), x="Max time (min)", y="Density")
 }
 ```
 
@@ -667,8 +707,8 @@ We select data with the following parameters (units are 1 / minute). They corres
 These plots show the distribution of the maximum time across 16 randomly selected samples:
 
 ```{r M1_max_chr, fig.width=6, fig.height=3}
-g1 <- plotMaxChromosomes(allsims, "M1", list(formation=2, conversion=2, detachment=0.5))
-g2 <- plotMaxChromosomes(allsims, "M2", list(replacement=2, conversion=2, knockoff=1e16))
+g1 <- plotMaxChromosomes(time.m1, "M1", list(formation=2, conversion=2, detachment=0.5))
+g2 <- plotMaxChromosomes(time.m2, "M2", list(replacement=2, conversion=2, knockoff=1e16))
 grid.arrange(g1, g2, ncol=2)
 ```
 

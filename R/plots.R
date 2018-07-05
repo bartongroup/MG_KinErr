@@ -110,7 +110,7 @@ plotStateHistory <- function(sc, max.time=NULL) {
 logScale <- function(show=2) {
   ticks <- 2:10
   # define the OOMs (orders of magnitudes)
-  ooms <- 10^(-2:2)
+  ooms <- 10^(-3:2)
   breaks <- as.vector(ticks %o% ooms)
   
   # select the labels to show
@@ -220,25 +220,27 @@ plotTwoHeat<- function(sim, par.x, par.y, par.f, val.f, val="median.time", val.n
 }
 
 
-plotDistributionGrid <- function(sim, model, grid.par, fixed.par, xlim=c(0.2, 500), bins=50) {
+plotDistributionGrid <- function(sim, grid.par, fixed.par, value="time", xlab="Time (min)", xlim=c(0.2, 500), bins=50) {
   par.x <- names(grid.par[1])
   par.y <- names(grid.par[2])
   par.f <- names(fixed.par)
   range.x <- grid.par[[1]]
   range.y <- grid.par[[2]]
   val.f <- fixed.par[[1]]
-  s <- sim[sim$model == model & sim[[par.x]] %in% range.x & sim[[par.y]] %in% range.y & sim[[par.f]] == val.f,]
-  s$log.time <- log10(s$time)
-  m <- s %>% group_by_(.dots=par.x, par.y) %>% summarise(median=median(time))
+  s <- sim[sim[[par.x]] %in% range.x & sim[[par.y]] %in% range.y & sim[[par.f]] == val.f,]
+  s$val <- s[[value]]
+  m <- s %>% group_by_(par.x, par.y) %>% summarise(median=median(val))
+  m$smedian = sprintf("%.2g", m$median)
   
   sc <- logScale(show=10)
   
-  ggplot(s, aes(x=time, y=..density..)) +
+  ggplot(s, aes(x=val, y=..density..)) +
     geom_histogram(bins=bins) +
     facet_grid(reformulate(par.x, par.y)) +
     ggtitle(paste0("x = ", par.x, " rate, y = ", par.y, " rate, ", par.f, " rate = ", val.f)) +
-    labs(x="Time (min)", y="Density") +
+    labs(x=xlab, y="Density") +
     geom_vline(data=m, aes(xintercept=median), colour="orange2") +
     scale_x_log10(labels=sc$labels, breaks=sc$breaks, limits=xlim)
+    #geom_text(data=m, aes(x=xlim[1], y=0.9, label=smedian))
 }
 
