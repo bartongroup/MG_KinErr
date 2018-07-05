@@ -12,11 +12,12 @@ source("R/lib.R")
 simulationRuns <- function(model, par, nsim, ncores) {
   T <- mclapply(1:nsim, function(i) {
     sc <- simulate(model, par, verbose=FALSE)
-    list(sim=i, time=sc$time, dist=sc$detached.distribution)
+    list(sim=i, time=sc$time, dur=sc$detached.duration, dist=sc$detached.distribution)
   }, mc.cores = ncores)
   sim <- unlist(lapply(T, function(x) x$sim))
   time <- unlist(lapply(T, function(x) x$time))
-  time <- data.frame(sim=sim, time=time)
+  dur <- unlist(lapply(T, function(x) x$dur))
+  time <- data.frame(sim=sim, time=time, detached.duration=dur)
   dist <- lapply(T, function(x) {
     if(length(x$dist) > 0) {
       data.frame(sim=x$sim, detached.time=x$dist)
