@@ -26,19 +26,22 @@ cnt <- 1
 for(file in files) {
   x <- readRDS(file)
   pars <- plist(x$model, x$parameters)
-  tim <- data.frame(model = x$model, time = x$result$time)
+  tim <- data.frame(time = x$result$time)
   tim <- cbind(tim, t(pars))
-  T[cnt] <- tim
-  det <- data.frame(model = x$model, detached = x$result$detached.distribution)
+  T[[x$model]][[cnt]] <- tim
+  det <- data.frame(detached = x$result$detached.distribution)
   det <- cbind(det, t(pars))
-  D[cnt] <- det
+  D[[x$model]][[cnt]] <- det
   cnt <- cnt + 1
 }
 
-dat <- list(
-  time = do.call(rbind, T),
-  detached = do.call(rbind, D)
-)
-
+models <- names(T)
+dat <- lapply(models, function(model) {
+  list(
+    time = do.call(rbind, T[[model]]),
+    detached = do.call(rbind, D[[model]])
+  )
+})
+names(dat) <- models
 
 saveRDS(dat, file=output.file)
