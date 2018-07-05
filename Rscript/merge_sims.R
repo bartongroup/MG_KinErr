@@ -1,18 +1,34 @@
 # merge simulation output files into one rds file
 # Usage:
-#    Rscript merge_sims.R <input_files> <output_file>
+#    Rscript merge_sims.R <input_dir> <output_file>
 
 args <- commandArgs(TRUE)
 n <- length(args)
-input.files <- args[1:(n-1)]
-output.file <- args[n]
+input.dir <- args[1]
+output.file <- args[2]
 
-P <- lapply(input.files, function(file) {
-  if(file.exists(file)) {
-    return(read.delim(file, sep="\t", header=TRUE))
-  }
+
+pn <- list(
+  M1 = c("formation", "conversion", "detachment"),
+  M2 = c("replacement", "knockoff", "conversion")
+)
+
+plist <- function(model, par) {
+  pnames <- pn[[model]]
+  spar <- setNames(unlist(lapply(pnames, function(p) par[[p]]$value$rate)), pnames)
+}
+
+files <- dir(input.dir)
+P <- lapply(files, function(file) {
+  x <- readRDS(file)
+  pars <- plist(x$model, x$parameters)
+  list(
+    model = x$model,
+    parameters = pars,
+    batch = x$batch,
+    time = x$result$time,
+    detached = x$result$detached.distribution
+  )
 })
-P <- do.call(rbind, P)
-rownames(P) <- NULL
 
 saveRDS(P, file=output.file)

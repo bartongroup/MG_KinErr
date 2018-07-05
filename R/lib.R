@@ -404,7 +404,7 @@ detachedDurationIntervals <- function(sc) {
 }
 
 # The same as above, using data.table 
-detachedDuration <- function(sc) {
+detachedDistribution <- function(sc) {
   if(sc$model != "M1") return(NA)
   sh <- sc$state.history
   sh <- sh[sh$state == "none", ]
@@ -412,7 +412,7 @@ detachedDuration <- function(sc) {
   shL <- data.table(start=shL$start, end=shL$end)
   shR <- sh[sh$KT.side == "R" , ]
   shR <- data.table(start=shR$start, end=shR$end)
-  if(nrow(shL) == 0 | nrow(shR) == 0) return(0)
+  if(nrow(shL) == 0 | nrow(shR) == 0) return(numeric(0)) # empty vector
   setkey(shR, start, end)
   # find overlaps
   ov <- foverlaps(shL, shR, type="any", nomatch=0)
@@ -420,8 +420,7 @@ detachedDuration <- function(sc) {
   ov[, start := pmax(start, i.start)]
   ov[, end := pmin(end, i.end)]
   ov[, length := end - start]
-  
-  sum(ov$length)
+  as.numeric(ov$length)  
 }
 
 
@@ -450,7 +449,8 @@ simulate <- function(model, par, verbose=FALSE, max.iter=1000) {
   rownames(sc$event.history) <- NULL
   rownames(sc$state.history) <- NULL
   rownames(sc$timeline) <- NULL
-  sc$detached.duration <- detachedDuration(sc)
+  sc$detached.distribution <- detachedDistribution(sc)
+  sc$detached.duration <- sum(sc$detached.distribution)
   
   return(sc)
 }
