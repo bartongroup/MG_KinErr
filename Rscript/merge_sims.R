@@ -18,17 +18,27 @@ plist <- function(model, par) {
   spar <- setNames(unlist(lapply(pnames, function(p) par[[p]]$value$rate)), pnames)
 }
 
-files <- dir(input.dir)
-P <- lapply(files, function(file) {
+# read all files
+files <- dir(input.dir, full.names = TRUE)
+T <- list()
+D <- list()
+cnt <- 1
+for(file in files) {
   x <- readRDS(file)
   pars <- plist(x$model, x$parameters)
-  list(
-    model = x$model,
-    parameters = pars,
-    batch = x$batch,
-    time = x$result$time,
-    detached = x$result$detached.distribution
-  )
-})
+  tim <- data.frame(model = x$model, time = x$result$time)
+  tim <- cbind(tim, t(pars))
+  T[cnt] <- tim
+  det <- data.frame(model = x$model, detached = x$result$detached.distribution)
+  det <- cbind(det, t(pars))
+  D[cnt] <- det
+  cnt <- cnt + 1
+}
 
-saveRDS(P, file=output.file)
+dat <- list(
+  time = do.call(rbind, T),
+  detached = do.call(rbind, D)
+)
+
+
+saveRDS(dat, file=output.file)
