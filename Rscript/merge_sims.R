@@ -26,12 +26,8 @@ cnt <- 1
 for(file in files) {
   x <- readRDS(file)
   pars <- plist(x$model, x$parameters)
-  tim <- data.frame(time = x$result$time)
-  tim <- cbind(tim, t(pars))
-  T[[x$model]][[cnt]] <- tim
-  det <- data.frame(detached = x$result$detached.distribution)
-  det <- cbind(det, t(pars))
-  D[[x$model]][[cnt]] <- det
+  T[[x$model]][[cnt]] <- cbind(batch=x$batch, x$result$time, t(pars))
+  D[[x$model]][[cnt]] <- cbind(batch=x$batch, x$result$detached.distribution, t(pars))
   cnt <- cnt + 1
 }
 
