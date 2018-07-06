@@ -152,3 +152,9 @@ Redo figures for time distributions and 16 chromosomes time distributions.
 Working on the above to-do list. I've re-done the simulation scripts to store individual detachment times. This changed data structures and required lots of modifications in the code in the document.
 
 Individual detachment now included. Also, calculated $\sigma_t$ for Gaussian diffusion.
+
+# 6/07/2018
+
+Simplifying and improving plots for detached distribution.
+
+Modified kinetube script to record conversion times: from the onset of sliding until end-on conversion. This includes (multiple) MT rescues, but not drop-offs. Also, sliding that ends in the pole is not counted. I run the sims on the cluster.

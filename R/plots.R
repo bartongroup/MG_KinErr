@@ -244,3 +244,25 @@ plotDistributionGrid <- function(sim, grid.par, fixed.par, value="time", xlab="T
     #geom_text(data=m, aes(x=xlim[1], y=0.9, label=smedian))
 }
 
+
+defparPlot <- function(deftime) {
+  brks <- c(0.001, 0.01, 0.1, 1, 10, 100)
+  ggplot(deftime, aes(time)) +
+    geom_histogram(bins=60) +
+    facet_grid(. ~ set) +
+    scale_x_log10(breaks=brks, labels=brks, limits=c(0.1, 100)) +
+    labs(x = "Time (min)", y = "Count")
+}
+
+defparRidgePlot <- function(deftime) {
+  brks <- c(0.001, 0.01, 0.1, 1, 10, 100)
+  deftime$set <- as.factor(deftime$set)
+  ggplot(deftime, aes(x=time, y=model, fill=set)) +
+    geom_density_ridges(alpha=0.3, color="white", scale=0.95) +
+    scale_y_discrete(expand = c(0.01, 0)) +
+    scale_x_log10(breaks=brks, labels=brks, limits=c(0.1, 100)) +
+    scale_fill_manual(values=c("#ff0000", "#0000ff")) +
+    labs(x = "Time (min)", y = "Model") +
+    theme_ridges(center_axis_labels = TRUE)
+}
+

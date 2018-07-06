@@ -7,7 +7,7 @@ defaultParameters <- function(set=1) {
   if(set == 1) {
     parametersRates(
       formation = 1,
-      conversion = 1.5,
+      conversion = 2,
       detachment = 1,
       replacement = 1,
       knockoff = 10
@@ -15,7 +15,7 @@ defaultParameters <- function(set=1) {
   } else if (set == 2) {
     parametersRates(
       formation = 0.5,
-      conversion = 1.5,
+      conversion = 2,
       detachment = 1,
       replacement = 0.5,
       knockoff = 10
@@ -45,6 +45,18 @@ defParsTab <- function(model, set) {
   )
 }
 
+defparStat <- function(deftime) {
+  P <- lapply(1:2, function(set) {
+    x <- deftime[deftime$set == set,]
+    data.frame(
+      set = set,
+      mean = mean(x$time),
+      median = median(x$time)
+    )
+  })
+  df <- do.call(rbind, P)
+}
+
 # select default parameters from the sim table
 # returns reduced sim table, with added columns "model" and "set"
 defSelect <- function(sim, model) {
@@ -56,4 +68,13 @@ defSelect <- function(sim, model) {
     data.frame(model=model, set=set, sim)
   })
   do.call(rbind, P)
+}
+
+
+# for a given sim, create a table with all parameters used
+getParameterGrid <- function(sim, parnames) {
+  P <- setNames(lapply(parnames, function(p) {
+    paste(sort(unique(sim[, p])), collapse=", ")
+  }), paste(parnames, "rate"))
+  df <- do.call(rbind, P)
 }
