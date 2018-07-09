@@ -690,7 +690,7 @@ P <- lapply(c(0.125, 0.5, 2), function(d) {
 grid.arrange(grobs=P, ncol=1)
 ```
 
-Hence, we can simplify distribution plots. We fix $R_\mathrm{conv} = 1.5$ and $R_\mathrm{det} = 1~\mathrm{min}^{-1}$ and show the full range of formation rate (the same distribution in linear of logarithmic scale).
+Hence, we can simplify distribution plots. We fix $R_\mathrm{conv} = 2$ and $R_\mathrm{det} = 1~\mathrm{min}^{-1}$ and show the full range of formation rate (the same distribution in linear of logarithmic scale).
 
 ```{r plot_distribution_ridges_function}
 plotDistributionRidges <- function(m, x, y, xlab, ylab, log.scale=TRUE, limits=c(0.001, 50), smooth=TRUE, binwidth=0.1) {
@@ -715,7 +715,7 @@ plotDistributionRidges <- function(m, x, y, xlab, ylab, log.scale=TRUE, limits=c
 
 ```{r detached_distribution_time, fig.width=10, fig.height=4}
 m <- det.m1 %>%
-  filter(conversion == 1.5 & detachment == 1) %>%
+  filter(conversion == 2 & detachment == 1) %>%
   mutate(form = as.factor(formation), sigma = sqrt(6 * 0.1 * detached.time))
 g2 <- plotDistributionRidges(m, "detached.time", "form", "Detached time (min)", expression(R[form]~(min^-1)))
 g1 <- plotDistributionRidges(m, "detached.time", "form", "Detached time (min)", expression(R[form]~(min^-1)), log.scale=FALSE, limits=c(0,20), smooth=FALSE, binwidth=0.1)
