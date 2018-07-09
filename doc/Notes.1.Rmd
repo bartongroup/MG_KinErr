@@ -158,3 +158,7 @@ Individual detachment now included. Also, calculated $\sigma_t$ for Gaussian dif
 Simplifying and improving plots for detached distribution.
 
 Modified kinetube script to record conversion times: from the onset of sliding until end-on conversion. This includes (multiple) MT rescues, but not drop-offs. Also, sliding that ends in the pole is not counted. I run the sims on the cluster.
+
+# 9/07/2018
+
+New linear-scale plots.

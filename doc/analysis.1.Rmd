@@ -196,7 +196,7 @@ qsub -q c6100.q,c6145.q -R y -V -cwd -t 1-100 ./scripts/simconv.pl -n -nsim=30 -
 
 Technical note: I had to limit the queues, because all the jobs sent to c6320.q dies with "No such file or directory". I suspect Perl configuration is different on these nodes.
 
-Here is the distribution of individual conversion times:
+Here is the distribution of individual conversion times (the same distribution in linear of logarithmic scale):
 
 ```{r kinetube_conversion_time}
 files <- dir("/home/mgierlinski/projects/kinetube/convrate", full.names=TRUE, pattern="conversions")
@@ -205,15 +205,25 @@ kinconv <- do.call(rbind, kinconv)
 names(kinconv) <- c("batch", "sim", "kt", "time")
 ```
 
-```{r conversion_time_distribution, fig.width=4, fig.height=3}
+```{r plot_conversion_time_function}
+plotConverstionTimeDistribution <- function(kinconv, log.scale=TRUE) {
+  brks <- c(0.001, 0.01, 0.1, 1, 10)
+  g <- ggplot(kinconv) +
+    theme_classic() +
+    geom_histogram(aes(x=time, y=..density..), bins=100) +
+    labs(x="Conversion time (min)", y="Density")
+  if(log.scale) g <- g + scale_x_log10(breaks=brks, labels=brks)
+  g
+}
+```
+
+
+```{r conversion_time_distribution, fig.width=8, fig.height=3}
 mean.conv <- mean(kinconv$time)
 conv.rate <- 1 / mean.conv
-brks <- c(0.001, 0.01, 0.1, 1, 10)
-ggplot(kinconv) +
-  theme_classic() +
-  geom_histogram(aes(x=time, y=..density..), bins=100) +
-  labs(x="Conversion time (min)", y="Density") +
-  scale_x_log10(breaks=brks, labels=brks)
+g1 <- plotConverstionTimeDistribution(kinconv, log.scale=FALSE)
+g2 <- plotConverstionTimeDistribution(kinconv, log.scale=TRUE)
+grid.arrange(g1, g2, ncol=2)
 ```
 
 The mean conversion time is `r round(mean.conv, 3)` min, which gives conversion rate of `r round(conv.rate, 2)` per min.
@@ -407,10 +417,12 @@ myKable(tab)
 
 ### Distribution of simulation time
 
-Here are distribuions of simulation time for both models (up and down) and parameter sets (fill colours).
+Here are distribuions of simulation time for both models (up and down) and parameter sets (fill colours). We show the same data in linear of logarithmic scale.
 
-```{r defpar_plot, fig.width=6, fig.height=3}
-defparRidgePlot(deftime)
+```{r defpar_plot, fig.width=9, fig.height=3}
+g1 <- defparRidgePlot(deftime, log.scale=FALSE, limits=c(0,40))
+g2 <- defparRidgePlot(deftime, log.scale=TRUE)
+grid.arrange(g1, g2, ncol=2)
 ```
 
 Here is the mean and median simulation time for 
@@ -678,25 +690,42 @@ P <- lapply(c(0.125, 0.5, 2), function(d) {
 grid.arrange(grobs=P, ncol=1)
 ```
 
-Hence, we can simplify distribution plots. We fix $R_\mathrm{conv} = 1.5$ and $R_\mathrm{det} = 1~\mathrm{min}^{-1}$ and show the full range of formation rate.
+Hence, we can simplify distribution plots. We fix $R_\mathrm{conv} = 1.5$ and $R_\mathrm{det} = 1~\mathrm{min}^{-1}$ and show the full range of formation rate (the same distribution in linear of logarithmic scale).
 
-```{r detached_distribution_time, fig.width=5, fig.height=4}
-brks <- c(0.001,0.01,0.1,1,10,100,1000)
+```{r plot_distribution_ridges_function}
+plotDistributionRidges <- function(m, x, y, xlab, ylab, log.scale=TRUE, limits=c(0.001, 50), smooth=TRUE, binwidth=0.1) {
+  brks <- c(0.001,0.01,0.1,1,10,100,1000)
+  g <- ggplot(m, aes_string(x=x, y=y)) +
+    theme_ridges(center_axis_labels = TRUE) +
+    labs(x="Detached time (min)", y=expression(R[form]~(min^-1)))
+  if(smooth) {
+    g <- g + geom_density_ridges()
+  } else {
+    g <- g + geom_density_ridges2(stat="binline", binwidth=binwidth)
+  }
+  if(log.scale) {
+    g <- g + scale_x_log10(breaks=brks, labels=brks, limits=limits)
+  } else {
+    g <- g + xlim(limits)
+  }
+  g
+}
+```
+
+
+```{r detached_distribution_time, fig.width=10, fig.height=4}
 m <- det.m1 %>%
   filter(conversion == 1.5 & detachment == 1) %>%
   mutate(form = as.factor(formation), sigma = sqrt(6 * 0.1 * detached.time))
-ggplot(m, aes(x=detached.time, y=form)) +
-  geom_density_ridges() +
-  scale_x_log10(breaks=brks, labels=brks, limits=c(0.001, 50)) +
-  theme_ridges(center_axis_labels = TRUE) +
-  #scale_fill_viridis(discrete=TRUE) +
-  labs(x="Detached time (min)", y=expression(R[form]~(min^-1)))
+g2 <- plotDistributionRidges(m, "detached.time", "form", "Detached time (min)", expression(R[form]~(min^-1)))
+g1 <- plotDistributionRidges(m, "detached.time", "form", "Detached time (min)", expression(R[form]~(min^-1)), log.scale=FALSE, limits=c(0,20), smooth=FALSE, binwidth=0.1)
+grid.arrange(g1, g2, ncol=2)
 ```
 
 
 ### Diffusion distance scale
 
-Next, we find the diffusion range, defined as $\sigma = \sqrt{6 D t}$, where $D = 0.1~\mu \mathrm{m}^2\mathrm{min}^{-1}$ is the diffusion coefficient and $t$ is the detachment time. We fix $R_\mathrm{conv} = 1.5$ and $R_\mathrm{det} = 1~\mathrm{min}^{-1}$ and show the full range of formation rate.
+Next, we find the diffusion range, defined as $\sigma = \sqrt{6 D t}$, where $D = 0.1~\mu \mathrm{m}^2\mathrm{min}^{-1}$ is the diffusion coefficient and $t$ is the detachment time. We fix $R_\mathrm{conv} = 1.5$ and $R_\mathrm{det} = 1~\mathrm{min}^{-1}$ and show the full range of formation rate (the same distribution in linear of logarithmic scale).
 
 ```{r detached_distribution_distance_old, fig.width=8, fig.height=3, eval=FALSE}
 det.m1$sigma = sqrt(6 * 0.1 * det.m1$detached.time)
@@ -705,14 +734,11 @@ fixed.par <- list(detachment=c(1))
 plotDistributionGrid(det.m1, grid.par, fixed.par, value="sigma", xlab=expression(sigma~(mu*m)), xlim=c(0.005, 3))
 ```
 
-```{r detached_distribution_distance, fig.width=5, fig.height=4}
+```{r detached_distribution_distance, fig.width=10, fig.height=4}
 sig1 <- median(m[m$formation == 1, "sigma"])
-ggplot(m, aes(x=sigma, y=form)) +
-  geom_density_ridges() +
-  scale_x_log10(breaks=brks, labels=brks, limits=c(0.02, 8)) +
-  theme_ridges(center_axis_labels = TRUE) +
-  #scale_fill_viridis(discrete=TRUE) +
-  labs(x=expression(sigma~(mu*m)), y=expression(R[form]~(min^-1)))
+g2 <- plotDistributionRidges(m, "sigma", "form", expression(sigma~(mu*m)), expression(R[form]~(min^-1)))
+g1 <- plotDistributionRidges(m, "sigma", "form", expression(sigma~(mu*m)), expression(R[form]~(min^-1)), log.scale=FALSE, limits=c(0,4), smooth=FALSE, binwidth=0.02)
+grid.arrange(g1, g2, ncol=2)
 ```
 
 Let us consider $R_\mathrm{form} = 1~\mathrm{min}^{-1}$. For this, the median diffusion range is $\sigma$ = `r round(sig1, 2)` $\mu$m. This is the standard deviation of the Gaussian distribution. Hence, about 95% of KTs will not strand farther than about $2\sigma$ = `r round(2*sig1, 2)` $\mu$m.

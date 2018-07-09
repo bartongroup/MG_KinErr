@@ -254,15 +254,17 @@ defparPlot <- function(deftime) {
     labs(x = "Time (min)", y = "Count")
 }
 
-defparRidgePlot <- function(deftime) {
+defparRidgePlot <- function(deftime, log.scale=TRUE, limits=NULL) {
   brks <- c(0.001, 0.01, 0.1, 1, 10, 100)
   deftime$set <- as.factor(deftime$set)
-  ggplot(deftime, aes(x=time, y=model, fill=set)) +
+  g <- ggplot(deftime, aes(x=time, y=model, fill=set)) +
     geom_density_ridges(alpha=0.3, color="white", scale=0.95) +
     scale_y_discrete(expand = c(0.01, 0)) +
-    scale_x_log10(breaks=brks, labels=brks, limits=c(0.1, 100)) +
     scale_fill_manual(values=c("#ff0000", "#0000ff")) +
     labs(x = "Time (min)", y = "Model") +
     theme_ridges(center_axis_labels = TRUE)
+  if(log.scale) g <- g + scale_x_log10(breaks=brks, labels=brks, limits=c(0.1, 100))
+  if(!is.null(limits)) g <- g + xlim(limits)
+  g
 }
 
