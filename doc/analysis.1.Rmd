@@ -725,14 +725,7 @@ grid.arrange(g1, g2, ncol=2)
 
 ### Diffusion distance scale
 
-Next, we find the diffusion range, defined as $\sigma = \sqrt{6 D t}$, where $D = 0.1~\mu \mathrm{m}^2\mathrm{min}^{-1}$ is the diffusion coefficient and $t$ is the detachment time. We fix $R_\mathrm{conv} = 1.5$ and $R_\mathrm{det} = 1~\mathrm{min}^{-1}$ and show the full range of formation rate (the same distribution in linear of logarithmic scale).
-
-```{r detached_distribution_distance_old, fig.width=8, fig.height=3, eval=FALSE}
-det.m1$sigma = sqrt(6 * 0.1 * det.m1$detached.time)
-grid.par <- list(formation=c(0.25, 1, 4), conversion=c(1.5))
-fixed.par <- list(detachment=c(1))
-plotDistributionGrid(det.m1, grid.par, fixed.par, value="sigma", xlab=expression(sigma~(mu*m)), xlim=c(0.005, 3))
-```
+Next, we find the diffusion range, defined as $\sigma = \sqrt{6 D t}$, where $D = 0.1~\mu \mathrm{m}^2\mathrm{min}^{-1}$ is the diffusion coefficient and $t$ is the detachment time. We fix $R_\mathrm{conv} = 2$ and $R_\mathrm{det} = 1~\mathrm{min}^{-1}$ and show the full range of formation rate (the same distribution in linear of logarithmic scale).
 
 ```{r detached_distribution_distance, fig.width=10, fig.height=4}
 sig1 <- median(det.m1.sel[det.m1.sel$formation == 1, "sigma"])
@@ -745,7 +738,7 @@ Let us consider $R_\mathrm{form} = 1~\mathrm{min}^{-1}$. For this, the median di
 
 ### Mean diffusion
 
-Here we take the $\sigma$ distribution from the above figure (for each formation rate). Then, for each individual $\sigma$ from the distribution we build the corresponding Gaussian distribution, describing the local diffusion distance. We add up all the distributions to create a "pile-up". This describes the average distribution of diffusion distances across all observed detachment times. Here is the result. The vertical red lines show the size of the nucleus.
+Here we take the $\sigma$ distribution from the above figure (for each formation rate). Then, for each individual $\sigma$ from the distribution we build the corresponding Gaussian distribution, describing the local diffusion distance. We add up all the distributions to create a "pile-up". This describes the average distribution of diffusion distances across all observed detachment times. Here is the result. The vertical red lines show the size of the nucleus. Again, we fix $R_\mathrm{conv} = 2$ and $R_\mathrm{det} = 1~\mathrm{min}^{-1}$
 
 ```{r mean_distribution}
 dx <- 0.01
@@ -763,13 +756,26 @@ mdist <- do.call(rbind, P)
 ```
 
 ```{r plot_mean_distribution, fig.width=4, fig.height=4}
+rnuc <- 1.25
 mdist$formation <- as.factor(mdist$formation)
 ggplot(mdist) +
   theme_ridges(center_axis_labels = TRUE) +
   geom_ridgeline(aes(x=x, y=formation, height=y, group=formation), scale=1) +
   xlim(-1,1) +
-  geom_vline(xintercept = c(-0.625, 0.625), colour="red") +
+  geom_vline(xintercept = c(-rnuc/2, rnuc/2), colour="red") +
   labs(x=expression(Distance~from~centre~(mu*m)), y=expression(R[form]~(min^-1)))
+```
+
+The table below shows the fraction of KTs that diffuse within the nucleus (that is, the area of each distribution within the red lines):
+
+```{r table_mean_distribution}
+msum <- mdist %>%
+  group_by(formation) %>%
+  filter(x > -rnuc/2 & x < rnuc/2) %>%
+  summarise(nucsum = sum(y) * dx) %>%
+  arrange(desc(formation)) %>%
+  as.data.frame %>% setNames(c("Form rate", "Fraction in nuc"))
+myKable(msum)
 ```
 
 ## 16 chromosomes
