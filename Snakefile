@@ -1,8 +1,8 @@
 # Basic values
 
 rscript = 'Rscript'
-nsim = 10
-nbatch = 3
+nsim = 10000
+nbatch = 1
 test_seed = 52346
 
 # Ranges of values
@@ -11,18 +11,19 @@ MODELS = ["M1", "M2"]
 TESTS = [1, 2, 3, 4]
 BATCHES = range(1, nbatch+1)
 
-#FORMS = [0.125, 0.25, 0.5, 1, 2, 4]
-#CONVS = [0.125, 0.25, 0.5, 1, 1.5, 2, 4]
-#DETS = [0.0625, 0.125, 0.25, 0.5, 1, 2, 4]
-#REPS = [0.125, 0.25, 0.5, 1, 2, 4] # replacement is the same process as formation
-#KOS = [1e16, 0.5, 1, 2, 10]
+FORMS = [0.125, 0.25, 0.5, 1, 2, 4]
+CONVS = [0.125, 0.25, 0.5, 1, 1.5, 2, 4]
+DETS = [0.0625, 0.125, 0.25, 0.5, 1, 2, 4]
+REPS = [0.125, 0.25, 0.5, 1, 2, 4] # replacement is the same process as formation
+KOS = [1e16, 0.5, 1, 2, 10]
 
 
-FORMS = [0.5, 1]
-CONVS = [0.5, 1]
-DETS = [0.25, 0.5]
-REPS = [0.5, 1]
-KOS = [1e16, 10]
+#FORMS = [0.5, 1]
+#CONVS = [0.5, 1]
+#DETS = [0.25, 0.5]
+#REPS = [0.5, 1] # replacement is the same process as formation
+#KOS = [1e16, 10]
+
 
 # sim files for all range parameters
 def all_simfiles(wildcards):
