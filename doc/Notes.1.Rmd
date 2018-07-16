@@ -162,3 +162,22 @@ Modified kinetube script to record conversion times: from the onset of sliding u
 # 9/07/2018
 
 New linear-scale plots.
+
+## Meeting with Tomo and Hari.
+
+- fig diffusion scale should be sigma (um).
+- nucleus diameter 1.25
+- combined distribution of sigma: across distribution of detachment times (add Gaussians??)
+
+Next step, big simulation:
+
+- two spindle poles
+- MTs grow ($v_g$), shrink ($v_s$), pivot ($D_{MT}$)
+- only one KT pair, moving freely, by diffusion ($D$)
+- capture is simplified: when MT within capture radius ($r_c$), it is shifted towards KT, lateral attachment forms
+- there is no sliding
+- shrinking MT converts to end-on ($v_e$)
+- end-on can be either detached (model 1, $R_d$) or replaced (model 2)
+- when 2 MTs are interlocked at the KT pair, there is no pivoting (it all freezes)
+- there is end-on pulling ($v_e$), which stops at exclusion radius ($r_e$)
+

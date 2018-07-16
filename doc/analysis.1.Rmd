@@ -417,7 +417,7 @@ myKable(tab)
 
 ### Distribution of simulation time
 
-Here are distribuions of simulation time for both models (up and down) and parameter sets (fill colours). We show the same data in linear of logarithmic scale.
+Here are distributions of simulation time for both models (up and down) and parameter sets (fill colours). We show the same data in linear of logarithmic scale.
 
 ```{r defpar_plot, fig.width=9, fig.height=3}
 g1 <- defparRidgePlot(deftime, log.scale=FALSE, limits=c(0,40))
@@ -690,14 +690,14 @@ P <- lapply(c(0.125, 0.5, 2), function(d) {
 grid.arrange(grobs=P, ncol=1)
 ```
 
-Hence, we can simplify distribution plots. We fix $R_\mathrm{conv} = 1.5$ and $R_\mathrm{det} = 1~\mathrm{min}^{-1}$ and show the full range of formation rate (the same distribution in linear of logarithmic scale).
+Hence, we can simplify distribution plots. We fix $R_\mathrm{conv} = 2$ and $R_\mathrm{det} = 1~\mathrm{min}^{-1}$ and show the full range of formation rate (the same distribution in linear of logarithmic scale).
 
 ```{r plot_distribution_ridges_function}
 plotDistributionRidges <- function(m, x, y, xlab, ylab, log.scale=TRUE, limits=c(0.001, 50), smooth=TRUE, binwidth=0.1) {
   brks <- c(0.001,0.01,0.1,1,10,100,1000)
   g <- ggplot(m, aes_string(x=x, y=y)) +
     theme_ridges(center_axis_labels = TRUE) +
-    labs(x="Detached time (min)", y=expression(R[form]~(min^-1)))
+    labs(x=xlab, y=ylab)
   if(smooth) {
     g <- g + geom_density_ridges()
   } else {
@@ -714,11 +714,11 @@ plotDistributionRidges <- function(m, x, y, xlab, ylab, log.scale=TRUE, limits=c
 
 
 ```{r detached_distribution_time, fig.width=10, fig.height=4}
-m <- det.m1 %>%
-  filter(conversion == 1.5 & detachment == 1) %>%
+det.m1.sel <- det.m1 %>%
+  filter(conversion == 2 & detachment == 1) %>%
   mutate(form = as.factor(formation), sigma = sqrt(6 * 0.1 * detached.time))
-g2 <- plotDistributionRidges(m, "detached.time", "form", "Detached time (min)", expression(R[form]~(min^-1)))
-g1 <- plotDistributionRidges(m, "detached.time", "form", "Detached time (min)", expression(R[form]~(min^-1)), log.scale=FALSE, limits=c(0,20), smooth=FALSE, binwidth=0.1)
+g2 <- plotDistributionRidges(det.m1.sel, "detached.time", "form", "Detached time (min)", expression(R[form]~(min^-1)))
+g1 <- plotDistributionRidges(det.m1.sel, "detached.time", "form", "Detached time (min)", expression(R[form]~(min^-1)), log.scale=FALSE, limits=c(0,20), smooth=FALSE, binwidth=0.1)
 grid.arrange(g1, g2, ncol=2)
 ```
 
@@ -735,14 +735,42 @@ plotDistributionGrid(det.m1, grid.par, fixed.par, value="sigma", xlab=expression
 ```
 
 ```{r detached_distribution_distance, fig.width=10, fig.height=4}
-sig1 <- median(m[m$formation == 1, "sigma"])
-g2 <- plotDistributionRidges(m, "sigma", "form", expression(sigma~(mu*m)), expression(R[form]~(min^-1)))
-g1 <- plotDistributionRidges(m, "sigma", "form", expression(sigma~(mu*m)), expression(R[form]~(min^-1)), log.scale=FALSE, limits=c(0,4), smooth=FALSE, binwidth=0.02)
+sig1 <- median(det.m1.sel[det.m1.sel$formation == 1, "sigma"])
+g2 <- plotDistributionRidges(det.m1.sel, "sigma", "form", expression(sigma~(mu*m)), expression(R[form]~(min^-1)))
+g1 <- plotDistributionRidges(det.m1.sel, "sigma", "form", expression(sigma~(mu*m)), expression(R[form]~(min^-1)), log.scale=FALSE, limits=c(0,4), smooth=FALSE, binwidth=0.02)
 grid.arrange(g1, g2, ncol=2)
 ```
 
 Let us consider $R_\mathrm{form} = 1~\mathrm{min}^{-1}$. For this, the median diffusion range is $\sigma$ = `r round(sig1, 2)` $\mu$m. This is the standard deviation of the Gaussian distribution. Hence, about 95% of KTs will not strand farther than about $2\sigma$ = `r round(2*sig1, 2)` $\mu$m.
 
+### Mean diffusion
+
+Here we take the $\sigma$ distribution from the above figure (for each formation rate). Then, for each individual $\sigma$ from the distribution we build the corresponding Gaussian distribution, describing the local diffusion distance. We add up all the distributions to create a "pile-up". This describes the average distribution of diffusion distances across all observed detachment times. Here is the result. The vertical red lines show the size of the nucleus.
+
+```{r mean_distribution}
+dx <- 0.01
+x <- seq(from=-5, to=5, by=dx)
+P <- mclapply(unique(det.m1.sel$formation), function(form) {
+  sigmas <- det.m1.sel[det.m1.sel$formation == form, "sigma"]
+  y <- x * 0
+  for(s in sigmas) {
+    y <- y + dnorm(x, mean=0, sd=s)
+  }
+  y <- y / (dx * sum(y))
+  data.frame(formation=form, x=x, y=y)
+}, mc.cores=6)
+mdist <- do.call(rbind, P) 
+```
+
+```{r plot_mean_distribution, fig.width=4, fig.height=4}
+mdist$formation <- as.factor(mdist$formation)
+ggplot(mdist) +
+  theme_ridges(center_axis_labels = TRUE) +
+  geom_ridgeline(aes(x=x, y=formation, height=y, group=formation), scale=1) +
+  xlim(-1,1) +
+  geom_vline(xintercept = c(-0.625, 0.625), colour="red") +
+  labs(x=expression(Distance~from~centre~(mu*m)), y=expression(R[form]~(min^-1)))
+```
 
 ## 16 chromosomes
 
