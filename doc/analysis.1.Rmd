@@ -761,8 +761,8 @@ mdist$formation <- as.factor(mdist$formation)
 ggplot(mdist) +
   theme_ridges(center_axis_labels = TRUE) +
   geom_ridgeline(aes(x=x, y=formation, height=y, group=formation), scale=1) +
-  xlim(-1,1) +
-  geom_vline(xintercept = c(-rnuc/2, rnuc/2), colour="red") +
+  xlim(-1.5,1.5) +
+  geom_vline(xintercept = c(-rnuc, rnuc), colour="red") +
   labs(x=expression(Distance~from~centre~(mu*m)), y=expression(R[form]~(min^-1)))
 ```
 
@@ -771,7 +771,7 @@ The table below shows the fraction of KTs that diffuse within the nucleus (that 
 ```{r table_mean_distribution}
 msum <- mdist %>%
   group_by(formation) %>%
-  filter(x > -rnuc/2 & x < rnuc/2) %>%
+  filter(x > -rnuc & x < rnuc) %>%
   summarise(nucsum = sum(y) * dx) %>%
   arrange(desc(formation)) %>%
   as.data.frame %>% setNames(c("Form rate", "Fraction in nuc"))
