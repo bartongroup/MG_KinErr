@@ -1,5 +1,4 @@
 library(ggplot2)
-library(ggridges)
 library(parallel)
 library(methods)
 library(data.table)
