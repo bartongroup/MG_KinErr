@@ -1,12 +1,12 @@
 eventDurationDistribution <- function(sc) {
-  d <- lapply(SIDES, function(side) {
+  d <- lapply(KTS, function(id) {
     h <- sc$event.history
-    h <- h[h$KT.side == side,, drop=FALSE]
+    h <- h[h$KT.id == id,, drop=FALSE]
     if(nrow(h) > 0) {
       #h$dt <- h$time - c(0, h$time[1:(nrow(h) - 1)])
       # internal consistency check
       #if(sum((h$dt - h$duration)^2) > 1e-16) stop("Duration disagreement")
-      h[, c("KT.side", "event", "duration")]
+      h[, c("KT.id", "event", "duration")]
     } else {
       return(NULL)
     }
