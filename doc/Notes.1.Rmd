@@ -181,3 +181,27 @@ Next step, big simulation:
 - when 2 MTs are interlocked at the KT pair, there is no pivoting (it all freezes)
 - there is end-on pulling ($v_e$), which stops at exclusion radius ($r_e$)
 
+# 24/08/2018
+
+Meeting with Tomo and Hari.
+
+We need to make a change in the model. Hari noticed that the lateral takeover from the same pole doesn't happen. It should trigger the following events:
+
+- the system stays in the dual configuration for time governed by conversion rate (it corresponds to a MT growing and shrinking)
+- it converts into a dual end-on state; then the new attachment detaches at knock-off rate
+
+when the takeover is by a MT from the other pole the events are in the reversed order
+
+- the old attachment is detached at KO rate
+- the new lateral attachment converts into end-on at conversion rate
+
+The total time should be exactly the same. But we still want to introduce this in the code.
+
+Once this is done we need new, simplified figures for the paper.
+
+- conversion rate is fixed at $R_\mathrm{conv}=2$
+- formation/replacement rate fix at 2 per min: Vanya’s paper half-life of free KT is 30 s
+- Shuyu looked bi-orientation time, median is about 1 min
+- make a box plot with fixed $R_\mathrm{conv}$ and $R_\mathrm{form/repl}$
+- for the best value (shortest median time) make a distribution plot
+- example configuration timeline plots
