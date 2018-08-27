@@ -147,6 +147,19 @@ plotParameterMedianTime <- function(sim, parnames) {
   grid.arrange(grobs=P, ncol=3)
 }
 
+plotBestTime <- function(selsim, par, ylim=c(NA,NA)) {
+  s <- logScale()
+  selsim[[par]] <- as.factor(selsim[[par]])
+  ggplot(selsim, aes_string(par, "time")) +
+    theme_classic() +
+    geom_boxplot(fill="moccasin", outlier.shape=NA) +
+    #geom_jitter(width=0.1, height=0) +
+    labs(x=par, y="Median time (min)") +
+    scale_y_log10(labels=s$labels, breaks=s$breaks, limits=ylim) +
+    theme(panel.grid.major.y = element_line(color="grey80")) 
+}
+
+
 plotFCsumDet <- function(sim) {
   sim$fc <- 1/sim$formation + 1/sim$conversion
   sim$detachment <- as.factor(sim$detachment)
@@ -248,6 +261,17 @@ plotDistributionGrid <- function(sim, grid.par, fixed.par, value="time", xlab="T
     #geom_text(data=m, aes(x=xlim[1], y=0.9, label=smedian))
 }
 
+plotDistributionPar <- function(selsim, xlim=c(0.2, 500), bins=50, show=10) {
+  sc <- logScale(show=show)
+  
+  ggplot(selsim, aes(x=time, y=..density..)) +
+    theme_classic() +
+    geom_histogram(bins=bins) +
+    labs(x="Time (min)", y="Density") +
+    #geom_vline(data=m, aes(xintercept=median), colour="orange2") +
+    scale_x_log10(labels=sc$labels, breaks=sc$breaks, limits=xlim)
+  #geom_text(data=m, aes(x=xlim[1], y=0.9, label=smedian))
+}
 
 defparPlot <- function(deftime) {
   brks <- c(0.001, 0.01, 0.1, 1, 10, 100)
