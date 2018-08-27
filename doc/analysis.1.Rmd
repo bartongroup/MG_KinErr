@@ -53,7 +53,7 @@ source("../R/setup.R")
 source("../R/lib.R")
 source("../R/simdat.R")
 source("../R/plots.R")
-source("../R/tests.R")
+source("../R/tests.R") 
 ```
 
 # {.tabset}
@@ -99,28 +99,28 @@ Let's start with an unattached microtubule.
 ```{r plot_lateral_attachement, fig.width=4, fig.height=2}
 par <- defaultParameters()
 sc <- sisterChromatids(par, model="M1")
-plotSisterChromatids(sc)
+plotSisterChromatids(sc, title="free") 
 ```
 
 A lateral attachment is created at formation rate $R_\mathrm{form}$.
 
 ```{r plot_emplty_sc, fig.width=4, fig.height=2}
-sc <- formLateralAttachment(sc, "L", "L")
-plotSisterChromatids(sc)
+sc <- formLateralAttachment(sc, "A", "L")
+plotSisterChromatids(sc, title="lateral") 
 ```
 
 Next, the lateral attachment is converted into the end-on attachment, at conversion rate $R_\mathrm{conv}$:
 
 ```{r plot_endon_attachement, fig.width=4, fig.height=2}
-sc <- convertAttachment(sc, "L")
-plotSisterChromatids(sc)
+sc <- convertAttachment(sc, "A")
+plotSisterChromatids(sc, title="endon") 
 ```
 
 Finally, the microtubule is detached at detachment rate $R_\mathrm{det}$:
 
 ```{r plot_detachment, fig.width=4, fig.height=2}
-sc <- detachKT(sc, "L")
-plotSisterChromatids(sc)
+sc <- detachKT(sc, "A")
+plotSisterChromatids(sc, title="free") 
 ```
 
 
@@ -131,31 +131,61 @@ In this model we assume that the end-on detachment happens only upon formation o
 
 ```{r plot_endon_attachement_2, fig.width=4, fig.height=2}
 sc <- sisterChromatids(par, model="M2")
-sc <- formLateralAttachment(sc, "L", "L")
-sc <- convertAttachment(sc, "L")
-plotSisterChromatids(sc)
+sc <- formLateralAttachment(sc, "A", "L")
+sc <- convertAttachment(sc, "A")
+plotSisterChromatids(sc, title="endon")
 ```
 
-Then, a lateral attachment can be created at the same KT, at replacement rate $R_\mathrm{rep}$. This is the same process as "formation" in model 1, but we call it "replacement" here, for distinction. For a moment we have a "dual" attachment.
+#### Opposite side: lateral takeover
 
-```{r plot_dual_attachement, fig.width=4, fig.height=2}
-sc <- formDualAttachment(sc, "L", "L")
-plotSisterChromatids(sc)
+Then, a MT from the opposite spindle can make a lateral takeover, at replacement rate $R_\mathrm{rep}$. This is the same process as "formation" in model 1, but we call it "replacement" here, for distinction. For a moment we have a "ambilink" attachment.
+
+```{r plot_ambilink_attachement, fig.width=4, fig.height=2}
+sc <- formLinkAttachment(sc, "A", "R")
+plotSisterChromatids(sc, title="ambilink")
 ```
 
-which, in turn, leads to the lateral attachment by knocking off the end-on MT. Here we assume no delay, though a knock-off rate $R_\mathrm{ko}$ can be introduced.
+The ambilink attachment is unstable and leads to the lateral attachment by knocking off the end-on MT at a rate $R_\mathrm{ko}$:
 
-```{r plot_dual_detachment, fig.width=4, fig.height=2}
-sc <- knockoffKT(sc, "L")
-plotSisterChromatids(sc) 
+```{r plot_ambilink_ko, fig.width=4, fig.height=2}
+sc <- knockoffKT(sc, "A")
+plotSisterChromatids(sc, title="lateral") 
 ```
 
 As before, the lateral attachment is converted into end-on at conversion rate $R_\mathrm{conv}$.
 
 ```{r plot_endon_attachement_3, fig.width=4, fig.height=2}
-sc <- convertAttachment(sc, "L")
-plotSisterChromatids(sc)
+sc <- convertAttachment(sc, "A")
+plotSisterChromatids(sc, title="endon") 
 ```
+
+
+#### Same side: failed takeover
+
+When the lateral takeover is atempted from the same side, it fails to knock-off the existing end-on attachment. Instead, a "synlink" attachment is formed (at replacement rate, $R_\mathrm{rep}$):
+
+```{r plot_synlink_attachement, fig.width=4, fig.height=2}
+sc <- sisterChromatids(par, model="M2")
+sc <- formLateralAttachment(sc, "A", "L")
+sc <- convertAttachment(sc, "A")
+sc <- formLinkAttachment(sc, "A", "L")
+plotSisterChromatids(sc, title="synlink") 
+```
+
+This works like a normal lateral attachment and is converted into endon at conversion rate $R_\mathrm{conv}$, except that at the end of the process a "biend" (bi-end-on) attachment is formed.
+
+```{r plot_biend_attachement, fig.width=4, fig.height=2}
+sc <- convertAttachment(sc, "A")
+plotSisterChromatids(sc, title="biend") 
+```
+
+The new MT (the one that was trying to take over) is the detached at the knock-off rate $R_\mathrm{ko}$:
+
+```{r plot_dual_detachment, fig.width=4, fig.height=2}
+sc <- knockoffKT(sc, "A")
+plotSisterChromatids(sc, title="endon")
+```
+
 
 In this model, the detachment rate does not come into effect.
 
@@ -365,9 +395,10 @@ plotSisterChromatids(sc)
 
 ### Model 2
 
-Another example, this time for model 2. Knockoff rate is very high ($10^{16}$), hence there is no "dual" state observed.
+Another example, this time for model 2. Knockoff rate is high ($10$), hence "ambilink" and "biend" states are short.
 
 ```{r simulation_example_M2}
+par <- parametersRates(2, 0.5, 1, 0.5, 10)
 set.seed(111)
 sc <- simulate("M2", par)
 myKable(sc$timeline, bootstrap="hover")

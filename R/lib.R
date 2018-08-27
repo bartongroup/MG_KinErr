@@ -1,6 +1,8 @@
 SIDES <- c("L", "R")
 SIDES <- setNames(SIDES, SIDES)
-CONTACTS <- c("none", "lateral", "endon", "dual")
+KTS <- c("A", "B")
+KTS <- setNames(KTS, KTS)
+CONTACTS <- c("none", "lateral", "endon", "ambilink", "synlink", "biend")
 EVENTS <- c("formation", "conversion", "detachment", "knockoff", "replacement")
 PARAMETERS <- c("formation", "conversion", "detachment", "knockoff", "replacement")
 MODELS <- c("M1", "M2")
@@ -18,7 +20,7 @@ setParameterRate <- function(par, process, rate) {
 }
 
 # parameters object constructor
-parametersRates <- function(formation=0.5, conversion=2, detachment=1, replacement=0.5, knockoff=1e16) {
+parametersRates <- function(formation=2, conversion=2, detachment=1, replacement=2, knockoff=1e16) {
   for(r in c(formation, conversion, detachment, replacement, knockoff)) {
     stopifnot(is.numeric(r) && r > 0)
   }
@@ -33,12 +35,12 @@ parametersRates <- function(formation=0.5, conversion=2, detachment=1, replaceme
 }
 
 # kinetochore object constructor
-kinetochore <- function(side) {
-  stopifnot(side %in% SIDES)
+kinetochore <- function(id) {
+  stopifnot(id %in% KTS)
   obj <- list(
-    side = side,
+    id = id,
     spindle = "none",
-    dual.spindle = "none",
+    link.spindle = "none",
     contact = "none",
     event.time = 0
   )
@@ -51,7 +53,7 @@ kinetochore <- function(side) {
 sisterChromatids <- function(par, time=0, model) {
   stopifnot(model %in% MODELS)
   stopifnot(is(par, "parameters"))
-  KT <- lapply(SIDES, function(s) kinetochore(s))
+  KT <- lapply(KTS, function(id) kinetochore(id))
   sc <- list(
     parameters = par,
     time = time,
@@ -69,8 +71,8 @@ sisterChromatids <- function(par, time=0, model) {
 
 # return current state of the system in a simple string or data frame
 getStatus <- function(sc, return="string") {
-  p <- unlist(lapply(SIDES, function(side) {
-    KT <- sc$KT[[side]]
+  p <- unlist(lapply(KTS, function(id) {
+    KT <- sc$KT[[id]]
     if(KT$contact == "none") {
       "---"
     } else {
@@ -80,7 +82,7 @@ getStatus <- function(sc, return="string") {
   if(return == "string") {
     sprintf("%5.2f  %11s %11s", sc$time, p[1], p[2])
   } else {
-    data.frame(time=sc$time, left=p[1], right=p[2])
+    data.frame(time=sc$time, A=p[1], B=p[2])
   }
 }
 
@@ -88,9 +90,9 @@ getStatus <- function(sc, return="string") {
 
 
 
-formLateralAttachment <- function(sc, side, spindle=NULL) {
+formLateralAttachment <- function(sc, id, spindle=NULL) {
   if(is.null(spindle)) spindle <- SIDES[rbinom(1, 1, 0.5) + 1] # MT from a random spindle
-  KT <- sc$KT[[side]]
+  KT <- sc$KT[[id]]
   
   if(KT$contact == "none") {
     KT$spindle <- spindle
@@ -99,66 +101,75 @@ formLateralAttachment <- function(sc, side, spindle=NULL) {
     stop(paste("Attempt to form lateral attachment on", KT$contact, "contact"))
   }
   
-  sc$KT[[side]] <- KT
+  sc$KT[[id]] <- KT
   sc
 }
 
 
-formDualAttachment <- function(sc, side, spindle=NULL) {
+formLinkAttachment <- function(sc, id, spindle=NULL) {
   if(is.null(spindle)) spindle <- SIDES[rbinom(1, 1, 0.5) + 1] # MT from a random spindle
-  KT <- sc$KT[[side]]
+  KT <- sc$KT[[id]]
   
   if(KT$contact == "endon") {
-    KT$contact <- "dual"
-    KT$dual.spindle <- KT$spindle
+    if(spindle == KT$spindle) {
+      KT$contact <- "synlink"
+    } else {
+      KT$contact <- "ambilink"
+    }
+    KT$link.spindle <- KT$spindle
     KT$spindle <- spindle
   } else {
-    stop(paste("Attempt to form dual attachment on", KT$contact, "contact"))
+    stop(paste("Attempt to form link attachment on", KT$contact, "contact"))
   }
   
-  sc$KT[[side]] <- KT
+  sc$KT[[id]] <- KT
   sc
 }
 
-convertAttachment <- function(sc, side) {
-  KT <- sc$KT[[side]]
+convertAttachment <- function(sc, id) {
+  KT <- sc$KT[[id]]
   
   if(KT$contact == "lateral") {
     KT$contact <- "endon"
+  } else if(KT$contact == "synlink") {
+    KT$contact <- "biend"
   } else {
-    stop(paste("Attempt to convert", KT$contact, "attachment on", side))
+    stop(paste("Attempt to convert", KT$contact, "attachment on", id))
   }
   
-  sc$KT[[side]] <- KT
+  sc$KT[[id]] <- KT
   sc
 }
 
 
-detachKT <- function(sc, side) {
-  KT <- sc$KT[[side]]
+detachKT <- function(sc, id) {
+  KT <- sc$KT[[id]]
   
   if(KT$contact == "endon") {
     KT$contact <- "none"
     KT$spindle <- "none"
   } else {
-    stop(paste("Attempt to detach", KT$contact, "attachment on", side))
+    stop(paste("Attempt to detach", KT$contact, "attachment on", id))
   }
 
-  sc$KT[[side]] <- KT
+  sc$KT[[id]] <- KT
   sc
 }
 
 
-knockoffKT <- function(sc, side) {
-  KT <- sc$KT[[side]]
+knockoffKT <- function(sc, id) {
+  KT <- sc$KT[[id]]
   
-  if(KT$contact == "dual") {
+  if(KT$contact == "ambilink") {
     KT$contact <- "lateral"
+  } else if (KT$contact == "biend") {
+    KT$contact <- "endon"
   } else {
-    stop(paste("Attempt to knockoff", KT$contact, "attachment on", side))
+    stop(paste("Attempt to knockoff", KT$contact, "attachment on", id))
   }
-
-  sc$KT[[side]] <- KT
+  KT$link.spindle <- "none"
+  
+  sc$KT[[id]] <- KT
   sc
 }
 
@@ -167,18 +178,18 @@ knockoffKT <- function(sc, side) {
 # the left spindle extend to both kinetochores and form end-on attachment
 setErrorState <- function(sc) {
   stopifnot(is(sc, "sisterChromatids"))
-  stopifnot(sc$KT$L$contact == "none" && sc$KT$R$contact == "none")
-  sc <- formLateralAttachment(sc, "L", "L")
-  sc <- formLateralAttachment(sc, "R", "L")
-  sc <- convertAttachment(sc, "L")
-  sc <- convertAttachment(sc, "R")
+  stopifnot(sc$KT$A$contact == "none" && sc$KT$B$contact == "none")
+  sc <- formLateralAttachment(sc, "A", "L")
+  sc <- formLateralAttachment(sc, "B", "L")
+  sc <- convertAttachment(sc, "A")
+  sc <- convertAttachment(sc, "B")
   sc
 }
 
 # Create two initial events to start simulation from the error state
 initialEvents <- function(sc) {
-  P <- lapply(SIDES, function(side) {
-    d <- generateEvent(sc, side)
+  P <- lapply(KTS, function(id) {
+    d <- generateEvent(sc, id)
   })
   df <- do.call(rbind, P)
   df <- df[order(df$time), ]
@@ -234,9 +245,9 @@ generateTime_ <- function(event, par) {
 #
 # This function has to be called upon execution of the previous event. It uses
 # current time to generate the time of the next event.
-generateEvent <- function(sc, side) {
+generateEvent <- function(sc, id) {
   # extracting value from a list takes a while, so do it once
-  KT <- sc$KT[[side]]
+  KT <- sc$KT[[id]]
   contact <- KT$contact
   model <- sc$model
   
@@ -246,12 +257,12 @@ generateEvent <- function(sc, side) {
   } 
   
   # lateral attachment: conversion
-  else if (contact == "lateral") {
+  else if (contact %in% c("lateral", "synlink")) {
     event <- "conversion"
   }
   
   # dual attachment: knockoff
-  else if (contact == "dual") {
+  else if (contact %in% c("ambilink", "biend")) {
     event <- "knockoff"
   }
 
@@ -272,7 +283,7 @@ generateEvent <- function(sc, side) {
   time <- sc$time + duration
 
   data.frame(
-    KT.side = side,
+    KT.id = id,
     spindle = KT$spindle,
     event = event,
     time = time,
@@ -285,7 +296,7 @@ generateEvent <- function(sc, side) {
 stateInfo <- function(KT, time) {
   data.frame(
     state = KT$contact,
-    KT.side = KT$side,
+    KT.id = KT$id,
     spindle = KT$spindle,
     start = KT$event.time,
     end = time
@@ -302,43 +313,43 @@ executeEvent <- function(sc) {
   
   # just to speed up the code a little bit
   event <- ev$event
-  KT.side <- ev$KT.side
+  KT.id <- ev$KT.id
   #stopifnot(event %in% EVENTS)
   
   # store state info
-  si <- stateInfo(sc$KT[[KT.side]], ev$time)
+  si <- stateInfo(sc$KT[[KT.id]], ev$time)
   sc$state.history <- rbind(sc$state.history, si)
   
   # set sc time to event time
   sc$time <- ev$time
-  sc$KT[[KT.side]]$event.time <- ev$time
+  sc$KT[[KT.id]]$event.time <- ev$time
   
   # store event in history stack
   sc$event.history <- rbind(sc$event.history, ev)
   
   # formation: form new lateral attachment
   if(event == "formation") {
-    sc <- formLateralAttachment(sc, KT.side)
+    sc <- formLateralAttachment(sc, KT.id)
   }
   
   # convertion: convert lateral to end-on
   else if(event == "conversion") {
-    sc <- convertAttachment(sc, KT.side)
+    sc <- convertAttachment(sc, KT.id)
   }
   
   # detachment: detach end-on attachment
   else if(event == "detachment") {
-    sc <- detachKT(sc, KT.side)
+    sc <- detachKT(sc, KT.id)
   }
   
   # knockoff: detach end-on attachment by lateral
   else if(event == "knockoff") {
-    sc <- knockoffKT(sc, KT.side)
+    sc <- knockoffKT(sc, KT.id)
   }
 
   # replacement: replace end-on with dual
   else if(event == "replacement") {
-    sc <- formDualAttachment(sc, KT.side)
+    sc <- formLinkAttachment(sc, KT.id)
   }
   
   else {
@@ -358,9 +369,9 @@ executeEvent <- function(sc) {
 nextEvent <- function(sc) {
   # generate event for the other KT
   if(nrow(sc$events) == 1) {
-    side <- sc$events[1, "KT.side"]
-    other.side <- ifelse(side == "L", "R", "L")
-    df <- generateEvent(sc, other.side)
+    KT.id <- sc$events[1, "KT.id"]
+    other.KT <- ifelse(KT.id == "A", "B", "A")
+    df <- generateEvent(sc, other.KT)
     ev <- rbind(sc$events, df)
     ev <- ev[order(ev$time), ]
     sc$events <- ev
@@ -371,9 +382,9 @@ nextEvent <- function(sc) {
 }
 
 finished <- function(sc) {
-  sc$KT$L$contact == "endon" && sc$KT$R$contact == "endon" &&
-  ((sc$KT$L$spindle == "L" && sc$KT$R$spindle == "R") ||
-    (sc$KT$L$spindle == "R" && sc$KT$R$spindle == "L"))
+  sc$KT$A$contact == "endon" && sc$KT$B$contact == "endon" &&
+  ((sc$KT$A$spindle == "L" && sc$KT$B$spindle == "R") ||
+    (sc$KT$A$spindle == "R" && sc$KT$B$spindle == "L"))
 }
 
 sys.time.fs <- function() {
@@ -394,12 +405,12 @@ detachedDurationIntervals <- function(sc) {
   if(sc$model != "M1") return(NA)
   sh <- sc$state.history
   sh <- sh[sh$state == "none", ]
-  shL <- as.matrix(sh[sh$KT.side == "L" , c("start", "end")])
-  shR <- as.matrix(sh[sh$KT.side == "R" , c("start", "end")])
-  if(nrow(shL) == 0 | nrow(shR) == 0) return(0)
-  shL <- Intervals(shL)
-  shR <- Intervals(shR)
-  int <- interval_intersection(shL, shR)
+  shA <- as.matrix(sh[sh$KT.id == "A" , c("start", "end")])
+  shB <- as.matrix(sh[sh$KT.id == "B" , c("start", "end")])
+  if(nrow(shA) == 0 | nrow(shB) == 0) return(0)
+  shA <- Intervals(shA)
+  shB <- Intervals(shB)
+  int <- interval_intersection(shA, shB)
   sum(size(int))  # total size of intersection
 }
 
@@ -408,9 +419,9 @@ detachedDistribution <- function(sc) {
   if(sc$model != "M1") return(NA)
   sh <- sc$state.history
   sh <- sh[sh$state == "none", ]
-  shL <- sh[sh$KT.side == "L" , ]
+  shL <- sh[sh$KT.id == "L" , ]
   shL <- data.table(start=shL$start, end=shL$end)
-  shR <- sh[sh$KT.side == "R" , ]
+  shR <- sh[sh$KT.id == "R" , ]
   shR <- data.table(start=shR$start, end=shR$end)
   if(nrow(shL) == 0 | nrow(shR) == 0) return(numeric(0)) # empty vector
   setkey(shR, start, end)
@@ -439,8 +450,8 @@ simulate <- function(model, par, verbose=FALSE, max.iter=1000) {
   }
   
   # close state and event history
-  for(KT.side in SIDES) {
-    si <- stateInfo(sc$KT[[KT.side]], sc$time)
+  for(KT.id in KTS) {
+    si <- stateInfo(sc$KT[[KT.id]], sc$time)
     sc$state.history <- rbind(sc$state.history, si)
   }
   sc$event.history <- rbind(sc$event.history, sc$events)
