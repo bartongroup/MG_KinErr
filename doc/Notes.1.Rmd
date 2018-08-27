@@ -205,3 +205,7 @@ Once this is done we need new, simplified figures for the paper.
 - make a box plot with fixed $R_\mathrm{conv}$ and $R_\mathrm{form/repl}$
 - for the best value (shortest median time) make a distribution plot
 - example configuration timeline plots
+
+# 27/08/2018
+
+Working on the new version of the code. Due to the required changes I introduced new states. "Dual" is now replaced by "ambilink", "synlink" and "biend". See the report for details.

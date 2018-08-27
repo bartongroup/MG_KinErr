@@ -55,6 +55,8 @@ source("../R/lib.R")
 source("../R/simdat.R")
 source("../R/plots.R")
 source("../R/tests.R") 
+pdf.dir <- paste0(projectDir, "pdf/")
+if(!dir.exists(pdf.dir)) dir.create(pdf.dir)
 ```
 
 # {.tabset}
@@ -73,9 +75,9 @@ In our model there are two kinetochores, left and right. Each of them can be in 
 - none
 - lateral
 - endon
-- dual
+- ambilink, synlink, biend
 
-Dual attachment represents the second model, when the lateral attachment is formed on top of the existing end-on attachment. In addition to the connection state, we also record which spindle pole (left or right) the kinetochore is attached to. Therefore, the state of the system can be briefly denoted as, e.g.:
+Dual attachments (ambilink, synlink, biend) represent the second model, when the lateral attachment is formed on top of the existing end-on attachment. In addition to the connection state, we also record which spindle pole (left or right) the kinetochore is attached to. Therefore, the state of the system can be briefly denoted as, e.g.:
 
 ```
 lateral-R endon-R
@@ -139,7 +141,7 @@ plotSisterChromatids(sc, title="endon")
 
 #### Opposite side: lateral takeover
 
-Then, a MT from the opposite spindle can make a lateral takeover, at replacement rate $R_\mathrm{rep}$. This is the same process as "formation" in model 1, but we call it "replacement" here, for distinction. For a moment we have a "ambilink" attachment.
+Then, a MT from the opposite spindle can make a lateral takeover, at replacement rate $R_\mathrm{rep}$. This is the same process as "formation" in model 1, but we call it "replacement" here, for distinction. For a moment we have an "ambilink" attachment.
 
 ```{r plot_ambilink_attachement, fig.width=4, fig.height=2}
 sc <- formLinkAttachment(sc, "A", "R")
@@ -561,7 +563,31 @@ P <- lapply(c(0.125, 0.5, 2), function(d) {
 grid.arrange(grobs=P, ncol=1)
 ```
 
+### Best parameters distribution plot
 
+Here we create a plot for the paper. Following our previous simulations and Vanya's paper we fix $R_\mathrm{form} = 2~\mathrm{min}^{-1}$ and $R_\mathrm{conv} = 2~\mathrm{min}^{-1}$. Shuyu's observations suggest median bi-orientation time of about 1 min. Hence, for these two fixed parameters we seek the detachment rate with the median runtime closest to 1 min.
+
+```{r M1_fig_best_parameters_search, fig.width=3, fig.height=3}
+mm1.sel <- subset(time.m1, formation==2 & conversion==2)
+plotBestTime(mm1.sel, "detachment", ylim=c(0.2, 200))
+```
+
+The best parameter is $R_\mathrm{det} = 1~\mathrm{min}^{-1}$. Here is the distribution of individual run times for this parameter:
+
+```{r M1_fig_runtime_distribution, fig.width=4, fig.height=3}
+m1.sel <- subset(time.m1, formation==2 & conversion==2 & detachment==1)
+g <- plotDistributionPar(m1.sel, xlim=c(0.08, 30), show=5, bins=50)
+g
+
+file <- "M1_defpar.pdf"
+pdf(paste0(pdf.dir, file), file, width=4, height=3)
+g
+dev.off()
+
+link <- paste0("[PDF](", public_html, "pdf/", file, ")")
+```
+
+Here is a link to the figure: `r link`.
 
 ### Examples
 
@@ -654,10 +680,37 @@ P <- lapply(c(1e16, 1), function(d) {
 grid.arrange(grobs=P, ncol=1) 
 ```
 
+### Best parameters distribution plot
+
+Here we create a plot for the paper. Following our previous simulations and Vanya's paper we fix $R_\mathrm{repl} = 2~\mathrm{min}^{-1}$ and $R_\mathrm{conv} = 2~\mathrm{min}^{-1}$. Shuyu's observations suggest median bi-orientation time of about 1 min. Hence, for these two fixed parameters we seek the detachment rate with the median runtime closest to 1 min.
+
+```{r M2_fig_best_parameters_search, fig.width=3, fig.height=3}
+mm2.sel <- subset(time.m2, replacement==2 & conversion==2)
+plotBestTime(mm2.sel, "knockoff", ylim=c(0.1, 200))
+```
+
+The best parameter is $R_\mathrm{ko} = 10^{16}~\mathrm{min}^{-1}$. Here is the distribution of individual run times for this parameter:
+
+```{r M2_fig_runtime_distribution, fig.width=4, fig.height=3}
+m2.sel <- subset(time.m2, replacement==2 & conversion==2 & knockoff==1e16)
+g <- plotDistributionPar(m2.sel, xlim=c(0.01, 20), show=5, bins=50)
+g
+
+file <- "M2_defpar.pdf"
+pdf(paste0(pdf.dir, file), file, width=4, height=3)
+g
+dev.off()
+
+link <- paste0("[PDF](", public_html, "pdf/", file, ")")
+```
+
+Here is a link to the figure: `r link`.
+
+
 
 ### Examples (instant knock-off)
 
-A few examples of simulation runs for a fast model 2 (that is $R_\mathrm{repl}=2$, $R_\mathrm{conv}=2$ and $R_\mathrm{ko}=1e16$):
+A few examples of simulation runs for a fast model 2 (that is $R_\mathrm{repl}=2$, $R_\mathrm{conv}=2$ and $R_\mathrm{ko}=10^{16}$):
 
 ```{r M2_fast_simulations_examples, fig.width=10, fig.height=1.5}
 set.seed(67)
