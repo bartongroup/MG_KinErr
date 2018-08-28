@@ -419,14 +419,14 @@ detachedDistribution <- function(sc) {
   if(sc$model != "M1") return(NA)
   sh <- sc$state.history
   sh <- sh[sh$state == "none", ]
-  shL <- sh[sh$KT.id == "L" , ]
-  shL <- data.table(start=shL$start, end=shL$end)
-  shR <- sh[sh$KT.id == "R" , ]
-  shR <- data.table(start=shR$start, end=shR$end)
-  if(nrow(shL) == 0 | nrow(shR) == 0) return(numeric(0)) # empty vector
-  setkey(shR, start, end)
+  shA <- sh[sh$KT.id == "A" , ]
+  shA <- data.table(start=shA$start, end=shA$end)
+  shB <- sh[sh$KT.id == "B" , ]
+  shB <- data.table(start=shB$start, end=shB$end)
+  if(nrow(shA) == 0 | nrow(shB) == 0) return(numeric(0)) # empty vector
+  setkey(shB, start, end)
   # find overlaps
-  ov <- foverlaps(shL, shR, type="any", nomatch=0)
+  ov <- foverlaps(shA, shB, type="any", nomatch=0)
   # find intersection of overlaps
   ov[, start := pmax(start, i.start)]
   ov[, end := pmin(end, i.end)]
