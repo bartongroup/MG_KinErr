@@ -77,7 +77,7 @@ In our model there are two kinetochores, left and right. Each of them can be in 
 - endon
 - ambilink, synlink, biend
 
-Dual attachments (ambilink, synlink, biend) represent the second model, when the lateral attachment is formed on top of the existing end-on attachment. In addition to the connection state, we also record which spindle pole (left or right) the kinetochore is attached to. Therefore, the state of the system can be briefly denoted as, e.g.:
+Dual attachments (ambilink, synlink, biend) are present in the second model, when the lateral attachment is formed on top of the existing end-on attachment. In addition to the connection state, we also record which spindle pole (left or right) the kinetochore is attached to. Therefore, the state of the system can be briefly denoted as, e.g.:
 
 ```
 lateral-R endon-R
@@ -162,10 +162,11 @@ sc <- convertAttachment(sc, "A")
 plotSisterChromatids(sc, title="endon") 
 ```
 
+The lateral takeover switches the side of the MT. E.g., it starts with an `endon-L` configuration and ends up with `endon-R` configuration.
 
 #### Same side: failed takeover
 
-When the lateral takeover is atempted from the same side, it fails to knock-off the existing end-on attachment. Instead, a "synlink" attachment is formed (at replacement rate, $R_\mathrm{rep}$):
+When the lateral takeover is attempted from the same side, observations suggest that it fails to knock-off the existing end-on attachment. Instead, a "synlink" attachment is formed (at replacement rate, $R_\mathrm{rep}$):
 
 ```{r plot_synlink_attachement, fig.width=4, fig.height=2}
 sc <- sisterChromatids(par, model="M2")
@@ -175,22 +176,25 @@ sc <- formLinkAttachment(sc, "A", "L")
 plotSisterChromatids(sc, title="synlink") 
 ```
 
-This works like a normal lateral attachment and is converted into endon at conversion rate $R_\mathrm{conv}$, except that at the end of the process a "biend" (bi-end-on) attachment is formed.
+This works like a normal lateral attachment and is converted into endon at conversion rate $R_\mathrm{conv}$, just like above, except that at the end of the process a "biend" (bi-end-on) attachment is formed.
 
 ```{r plot_biend_attachement, fig.width=4, fig.height=2}
 sc <- convertAttachment(sc, "A")
 plotSisterChromatids(sc, title="biend") 
 ```
 
-The new MT (the one that was trying to take over) is the detached at the knock-off rate $R_\mathrm{ko}$:
+This configuration is unstable and the new MT (the one that was trying to take over) is the detached at the knock-off rate $R_\mathrm{ko}$:
 
 ```{r plot_dual_detachment, fig.width=4, fig.height=2}
 sc <- knockoffKT(sc, "A")
 plotSisterChromatids(sc, title="endon")
 ```
 
+The failed lateral takeover does not change the side of the MT.
 
-In this model, the detachment rate does not come into effect.
+#### Both takeovers have the same duration
+
+Note: both opposite-side and same-side lateral takeover take the same amount of time. This is because the opposite-side takeover is a sequence of events with rates $R_\mathrm{rep}$, $R_\mathrm{ko}$ and $R_\mathrm{conv}$, while the same-side takeover is a sequence of events with rates $R_\mathrm{rep}$, $R_\mathrm{conv}$ and $R_\mathrm{ko}$. The only difference is the switched order of the last two events, but the total time (on average) will be the same.
 
 ## Conversion rate
 
@@ -565,7 +569,7 @@ grid.arrange(grobs=P, ncol=1)
 
 ### Best parameters distribution plot
 
-Here we create a plot for the paper. Following our previous simulations and Vanya's paper we fix $R_\mathrm{form} = 2~\mathrm{min}^{-1}$ and $R_\mathrm{conv} = 2~\mathrm{min}^{-1}$. Shuyu's observations suggest median bi-orientation time of about 1 min. Hence, for these two fixed parameters we seek the detachment rate with the median runtime closest to 1 min.
+Here we create a plot for the paper. Following our previous simulations and Vanya's paper we fix $R_\mathrm{form} = 2~\mathrm{min}^{-1}$ and $R_\mathrm{conv} = 2~\mathrm{min}^{-1}$. Shuyu's observations suggest median bi-orientation time of about 1 min. Hence, for these two fixed parameters we seek the detachment rate with the median run-time closest to 1 min.
 
 ```{r M1_fig_best_parameters_search, fig.width=3, fig.height=3}
 mm1.sel <- subset(time.m1, formation==2 & conversion==2)
@@ -580,9 +584,8 @@ g <- plotDistributionPar(m1.sel, xlim=c(0.08, 30), show=5, bins=50)
 g
 
 file <- "M1_defpar.pdf"
-pdf(paste0(pdf.dir, file), file, width=4, height=3)
-g
-dev.off()
+pfile <- paste0(pdf.dir, file)
+ggsave(pfile, plot=g, device="pdf")
 
 link <- paste0("[PDF](", public_html, "pdf/", file, ")")
 ```
@@ -591,20 +594,31 @@ Here is a link to the figure: `r link`.
 
 ### Examples
 
-A few examples of simulation runs for a fast model 1 (that is $R_\mathrm{form}=2$, $R_\mathrm{conv}=2$ and $R_\mathrm{det}=0.5$):
+A few examples of simulation runs for a fast model 1 (that is $R_\mathrm{form}=2$, $R_\mathrm{conv}=2$ and $R_\mathrm{det}=1$):
 
-```{r M1_fast_simulations_examples, fig.width=10, fig.height=1.5}
-set.seed(67)
-for(i in 1:5) {
-  sc <- simulate("M1", parametersRates(formation = 2, conversion = 2, detachment = 0.5))
-  #print(sc$time)
-  print(plotStateHistory(sc, max.time=15))
-} 
+```{r examples_function}
+plotExamples <- function(model, pars, seed, n=5, max.time=15) {
+  set.seed(seed)
+  P <- list()
+  for(i in 1:n) {
+    sc <- simulate(model, pars)
+    g <- plotStateHistory(sc, max.time=max.time)
+    print(g)
+  
+    file <- paste0(model, "_example_", i, ".pdf")
+    pfile <- paste0(pdf.dir, file)
+    ggsave(pfile, plot=g, device="pdf")
+
+    P[[i]] <- data.frame(link=paste0("[PDF", i, "](", public_html, "pdf/", file, ")"))
+  }
+  df <- do.call(rbind, P)
+  myKable(df)
+}
 ```
 
-
-
-
+```{r M1_fast_simulations_examples, fig.width=10, fig.height=1.5}
+plotExamples("M1", parametersRates(formation = 2, conversion = 2, detachment = 1), seed=67, max.time=10.5) 
+```
 
 ## Model 2
 
@@ -682,7 +696,7 @@ grid.arrange(grobs=P, ncol=1)
 
 ### Best parameters distribution plot
 
-Here we create a plot for the paper. Following our previous simulations and Vanya's paper we fix $R_\mathrm{repl} = 2~\mathrm{min}^{-1}$ and $R_\mathrm{conv} = 2~\mathrm{min}^{-1}$. Shuyu's observations suggest median bi-orientation time of about 1 min. Hence, for these two fixed parameters we seek the detachment rate with the median runtime closest to 1 min.
+Here we create a plot for the paper. Following our previous simulations and Vanya's paper we fix $R_\mathrm{repl} = 2~\mathrm{min}^{-1}$ and $R_\mathrm{conv} = 2~\mathrm{min}^{-1}$. Shuyu's observations suggest median bi-orientation time of about 1 min. Hence, for these two fixed parameters we seek the detachment rate with the median run-time closest to 1 min.
 
 ```{r M2_fig_best_parameters_search, fig.width=3, fig.height=3}
 mm2.sel <- subset(time.m2, replacement==2 & conversion==2)
@@ -696,10 +710,10 @@ m2.sel <- subset(time.m2, replacement==2 & conversion==2 & knockoff==1e16)
 g <- plotDistributionPar(m2.sel, xlim=c(0.01, 20), show=5, bins=50)
 g
 
+
 file <- "M2_defpar.pdf"
-pdf(paste0(pdf.dir, file), file, width=4, height=3)
-g
-dev.off()
+pfile <- paste0(pdf.dir, file)
+ggsave(pfile, plot=g, device="pdf")
 
 link <- paste0("[PDF](", public_html, "pdf/", file, ")")
 ```
@@ -713,11 +727,7 @@ Here is a link to the figure: `r link`.
 A few examples of simulation runs for a fast model 2 (that is $R_\mathrm{repl}=2$, $R_\mathrm{conv}=2$ and $R_\mathrm{ko}=10^{16}$):
 
 ```{r M2_fast_simulations_examples, fig.width=10, fig.height=1.5}
-set.seed(67)
-for(i in 1:5) {
-  sc <- simulate("M2", parametersRates(replacement = 2, conversion = 2, knockoff = 1e16))
-  print(plotStateHistory(sc, max.time=6))
-} 
+plotExamples("M2", parametersRates(replacement = 2, conversion = 2, knockoff = 1e16), seed=67, max.time=4) 
 ```
 
 ### Examples (knock-off delay)
@@ -725,19 +735,14 @@ for(i in 1:5) {
 Here are examples as above, but with $R_\mathrm{ko}=1$:
 
 ```{r M2_fast_simulations_examples_ko1, fig.width=10, fig.height=1.5}
-set.seed(12)
-for(i in 1:5) {
-  sc <- simulate("M2", parametersRates(replacement = 2, conversion = 2, knockoff = 1))
-  #print(sc$time)
-  print(plotStateHistory(sc, max.time=10))
-} 
+plotExamples("M2", parametersRates(replacement = 2, conversion = 2, knockoff = 1), seed=12, max.time=16) 
 ```
 
 
 ## Detached KTs
 
 ```{r detached_stats}
-mdet.m1 <- det.m1 %>% group_by(formation, conversion, detachment) %>% summarise(median.detached.time=median(detached.time), n=n()) %>% arrange(median.detached.time) %>% as.data.frame
+mdet.m1 <- as.data.frame(det.m1) %>% group_by(formation, conversion, detachment) %>% summarise(median.detached.time=median(detached.time), n=n()) %>% arrange(median.detached.time) %>% as.data.frame
 ```
 
 

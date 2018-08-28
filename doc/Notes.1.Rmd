@@ -113,7 +113,7 @@ UnsatisfiableError: The following specifications were found to be in conflict:
   - r-revoutilsmath -> mro-base=3.4.3 -> pango[version='>=1.41.0,<2.0a0']
 ```
 
-`intervals` is an old package and requires `pango` version exacly 1.40, while another installed package needs >= 1.41. So, instead, I used `data.table`. This is a bit more complicated as there is no intersection function, but it is not hard to get intersection from `foverlaps`.
+`intervals` is an old package and requires `pango` version exactly 1.40, while another installed package needs >= 1.41. So, instead, I used `data.table`. This is a bit more complicated as there is no intersection function, but it is not hard to get intersection from `foverlaps`.
 
 # 27/06/2018
 
@@ -127,7 +127,7 @@ Editing report. Improving figures.
 
 # 3/07/2018
 
-Added new heatmaps for conversion rate fixed at near our best guess of 2 / min.
+Added new heat-maps for conversion rate fixed at near our best guess of 2 / min.
 
 # 4/07/2018
 
@@ -209,3 +209,11 @@ Once this is done we need new, simplified figures for the paper.
 # 27/08/2018
 
 Working on the new version of the code. Due to the required changes I introduced new states. "Dual" is now replaced by "ambilink", "synlink" and "biend". See the report for details.
+
+# 28/08/2018
+
+Something bugged me in the new results. They were identical to old results. I mean identical. I suspected random generator but it turned out I forgot to delete old runs, so snakemake used the old results and aggregated them instead of running simulations. That's why it was so fast... Fortunately, tests were run independently and they passed.
+
+Running everything again. Just like before, 1 batch of 10,000 simulations per condition (set of parameters). This creates an R object of size of about 1 GB. This seems to be a limit for reasonable analysis.
+
+Finished simulation runs, rebuilding and tweaking the document.
