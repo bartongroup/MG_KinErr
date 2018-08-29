@@ -650,6 +650,8 @@ plotExamples <- function(model, pars, seed, n=5, max.time=15, time.limits=NULL) 
 plotExamples("M1", parametersRates(formation = 2, conversion = 2, detachment = 1), seed=67, max.time=10.5) 
 ```
 
+### Examples with time limit
+
 Here are examples with more typical run time between 2.6 and 3.4 min.
 
 ```{r M1_fast_simulations_examples_time, fig.width=10, fig.height=1.5}
@@ -765,6 +767,8 @@ A few examples of simulation runs for a fast model 2 (that is $R_\mathrm{repl}=2
 ```{r M2_fast_simulations_examples, fig.width=10, fig.height=1.5}
 plotExamples("M2", parametersRates(replacement = 2, conversion = 2, knockoff = 1e16), seed=67, max.time=4) 
 ```
+
+### Examples with time limit
 
 Here are examples with more typical run time between 1.1 and 1.7 min.
 
