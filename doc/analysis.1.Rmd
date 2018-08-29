@@ -569,6 +569,26 @@ grid.arrange(grobs=P, ncol=1)
 
 ### Best parameters distribution plot
 
+```{r ci_median_function}
+ciMedian <- function(x, nboot=1000, ci=0.95) {
+  n <- length(x)
+  P <- unlist(lapply(1:nboot, function(i) {
+    s <- sample(x, n, replace=TRUE)
+    median(s)
+  }))
+  q <- (1 - ci) / 2
+  q <- c(q, 1 - q)
+  quantile(P, q)
+}
+```
+
+```{r shuyus_data}
+sh <- read.table("../analysis_V5.txt", sep="\t", header=TRUE)
+names(sh) <- c("cell", "time.s", "time.m")
+sh.ci <- ciMedian(sh$time.m, nboot=10000)
+```
+
+
 Here we create a plot for the paper. Following our previous simulations and Vanya's paper we fix $R_\mathrm{form} = 2~\mathrm{min}^{-1}$ and $R_\mathrm{conv} = 2~\mathrm{min}^{-1}$. Shuyu's observations suggest median bi-orientation time of about 1 min. Hence, for these two fixed parameters we seek the detachment rate with the median run-time closest to 1 min.
 
 ```{r M1_fig_best_parameters_search, fig.width=3, fig.height=3}
@@ -576,18 +596,18 @@ mm1.sel <- subset(time.m1, formation==2 & conversion==2)
 plotBestTime(mm1.sel, "detachment", ylim=c(0.2, 200))
 ```
 
-The best parameter is $R_\mathrm{det} = 1~\mathrm{min}^{-1}$. Here is the distribution of individual run times for this parameter:
+The best parameter is $R_\mathrm{det} = 1~\mathrm{min}^{-1}$. Here is the distribution of individual run times for this parameter. The orange solid line shows the median of the distribution, while the blue dotted lines indicate 95% confidence intervals on the median bi-orientation time from Shuyu's observations.
 
-```{r M1_fig_runtime_distribution, fig.width=4, fig.height=3}
+```{r M1_fig_runtime_distribution, fig.width=7, fig.height=3}
 m1.sel <- subset(time.m1, formation==2 & conversion==2 & detachment==1)
-g <- plotDistributionPar(m1.sel, xlim=c(0.08, 30), show=5, bins=50)
+g <- plotDistributionPar(m1.sel, xlim=c(0.08, 30), show=5, bins=50, lines=sh.ci)
 g
 
 file <- "M1_defpar.pdf"
 pfile <- paste0(pdf.dir, file)
 ggsave(pfile, plot=g, device="pdf")
 
-link <- paste0("[PDF](", public_html, "pdf/", file, ")")
+link <- paste0("[PDF](", public_html, "pdf/", file, ")") 
 ```
 
 Here is a link to the figure: `r link`.
@@ -597,11 +617,21 @@ Here is a link to the figure: `r link`.
 A few examples of simulation runs for a fast model 1 (that is $R_\mathrm{form}=2$, $R_\mathrm{conv}=2$ and $R_\mathrm{det}=1$):
 
 ```{r examples_function}
-plotExamples <- function(model, pars, seed, n=5, max.time=15) {
+plotExamples <- function(model, pars, seed, n=5, max.time=15, time.limits=NULL) {
   set.seed(seed)
   P <- list()
   for(i in 1:n) {
-    sc <- simulate(model, pars)
+    if(is.null(time.limits)) {
+      sc <- simulate(model, pars)
+    } else {
+      repeat {
+        sc <- simulate(model, pars)
+        if(sc$time >= time.limits[1] && sc$time <= time.limits[2]) {
+          break
+        }
+      }
+    }
+    
     g <- plotStateHistory(sc, max.time=max.time)
     print(g)
   
@@ -618,6 +648,12 @@ plotExamples <- function(model, pars, seed, n=5, max.time=15) {
 
 ```{r M1_fast_simulations_examples, fig.width=10, fig.height=1.5}
 plotExamples("M1", parametersRates(formation = 2, conversion = 2, detachment = 1), seed=67, max.time=10.5) 
+```
+
+Here are examples with more typical run time between 2.6 and 3.4 min.
+
+```{r M1_fast_simulations_examples_time, fig.width=10, fig.height=1.5}
+plotExamples("M1", parametersRates(formation = 2, conversion = 2, detachment = 1), seed=100, n=5, max.time=3.5, time.limits = c(2.6, 3.4)) 
 ```
 
 ## Model 2
@@ -703,19 +739,19 @@ mm2.sel <- subset(time.m2, replacement==2 & conversion==2)
 plotBestTime(mm2.sel, "knockoff", ylim=c(0.1, 200))
 ```
 
-The best parameter is $R_\mathrm{ko} = 10^{16}~\mathrm{min}^{-1}$. Here is the distribution of individual run times for this parameter:
+The best parameter is $R_\mathrm{ko} = 10^{16}~\mathrm{min}^{-1}$. Here is the distribution of individual run times for this parameter. The orange solid line shows the median of the distribution, while the blue dotted lines indicate 95% confidence intervals on the median bi-orientation time from Shuyu's observations.
 
-```{r M2_fig_runtime_distribution, fig.width=4, fig.height=3}
+```{r M2_fig_runtime_distribution, fig.width=7, fig.height=3}
 m2.sel <- subset(time.m2, replacement==2 & conversion==2 & knockoff==1e16)
-g <- plotDistributionPar(m2.sel, xlim=c(0.01, 20), show=5, bins=50)
-g
+g <- plotDistributionPar(m2.sel, xlim=c(0.01, 20), show=5, bins=50, lines=sh.ci)
+print(g)
 
 
 file <- "M2_defpar.pdf"
 pfile <- paste0(pdf.dir, file)
 ggsave(pfile, plot=g, device="pdf")
 
-link <- paste0("[PDF](", public_html, "pdf/", file, ")")
+link <- paste0("[PDF](", public_html, "pdf/", file, ")") 
 ```
 
 Here is a link to the figure: `r link`.
@@ -728,6 +764,12 @@ A few examples of simulation runs for a fast model 2 (that is $R_\mathrm{repl}=2
 
 ```{r M2_fast_simulations_examples, fig.width=10, fig.height=1.5}
 plotExamples("M2", parametersRates(replacement = 2, conversion = 2, knockoff = 1e16), seed=67, max.time=4) 
+```
+
+Here are examples with more typical run time between 1.1 and 1.7 min.
+
+```{r M2_fast_simulations_examples_time, fig.width=10, fig.height=1.5}
+plotExamples("M2", parametersRates(replacement = 2, conversion = 2, knockoff = 1e16), seed=100, n=5, max.time=3.5, time.limits = c(1.1, 1.7)) 
 ```
 
 ### Examples (knock-off delay)

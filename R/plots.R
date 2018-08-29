@@ -261,16 +261,27 @@ plotDistributionGrid <- function(sim, grid.par, fixed.par, value="time", xlab="T
     #geom_text(data=m, aes(x=xlim[1], y=0.9, label=smedian))
 }
 
-plotDistributionPar <- function(selsim, xlim=c(0.2, 500), bins=50, show=10) {
+plotDistributionPar <- function(selsim, xlim=c(0.2, 500), bins=50, show=10, lines=NULL, line.colour="lightblue3") {
   sc <- logScale(show=show)
+  med <- median(selsim$time)
   
-  ggplot(selsim, aes(x=time, y=..density..)) +
+  g1 <- ggplot(selsim, aes(x=time, y=..density..)) +
     theme_classic() +
     geom_histogram(bins=bins) +
     labs(x="Time (min)", y="Density") +
-    #geom_vline(data=m, aes(xintercept=median), colour="orange2") +
     scale_x_log10(labels=sc$labels, breaks=sc$breaks, limits=xlim)
-  #geom_text(data=m, aes(x=xlim[1], y=0.9, label=smedian))
+  g2 <- ggplot(selsim, aes(x=time, y=..density..)) +
+    theme_classic() +
+    geom_histogram(bins=bins) +
+    labs(x="Time (min)", y="Density") +
+    scale_x_continuous(limits=xlim)
+  if(!is.null(lines)) {
+    g1 <- g1 + geom_vline(xintercept=lines, colour=line.colour, linetype="dotted")
+    g1 <- g1 + geom_vline(xintercept=med, colour="orange3")
+    g2 <- g2 + geom_vline(xintercept=lines, colour=line.colour, linetype="dotted")
+    g2 <- g2 + geom_vline(xintercept=med, colour="orange3")
+  }
+  grid.arrange(g1, g2, ncol=2)
 }
 
 defparPlot <- function(deftime) {
