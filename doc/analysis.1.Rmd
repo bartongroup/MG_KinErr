@@ -617,7 +617,7 @@ Here is a link to the figure: `r link`.
 A few examples of simulation runs for a fast model 1 (that is $R_\mathrm{form}=2$, $R_\mathrm{conv}=2$ and $R_\mathrm{det}=1$):
 
 ```{r examples_function}
-plotExamples <- function(model, pars, seed, n=5, max.time=15, time.limits=NULL) {
+plotExamples <- function(model, pars, seed, root="example", n=5, max.time=15, time.limits=NULL) {
   set.seed(seed)
   P <- list()
   for(i in 1:n) {
@@ -635,7 +635,7 @@ plotExamples <- function(model, pars, seed, n=5, max.time=15, time.limits=NULL) 
     g <- plotStateHistory(sc, max.time=max.time)
     print(g)
   
-    file <- paste0(model, "_example_", i, ".pdf")
+    file <- paste0(model, "_", root, "_", i, ".pdf")
     pfile <- paste0(pdf.dir, file)
     ggsave(pfile, plot=g, device="pdf")
 
@@ -647,7 +647,7 @@ plotExamples <- function(model, pars, seed, n=5, max.time=15, time.limits=NULL) 
 ```
 
 ```{r M1_fast_simulations_examples, fig.width=10, fig.height=1.5}
-plotExamples("M1", parametersRates(formation = 2, conversion = 2, detachment = 1), seed=67, max.time=10.5) 
+plotExamples("M1", parametersRates(formation = 2, conversion = 2, detachment = 1), seed=67, max.time=10.5)
 ```
 
 ### Examples with time limit
@@ -655,7 +655,7 @@ plotExamples("M1", parametersRates(formation = 2, conversion = 2, detachment = 1
 Here are examples with more typical run time between 2.6 and 3.4 min.
 
 ```{r M1_fast_simulations_examples_time, fig.width=10, fig.height=1.5}
-plotExamples("M1", parametersRates(formation = 2, conversion = 2, detachment = 1), seed=100, n=5, max.time=3.5, time.limits = c(2.6, 3.4)) 
+plotExamples("M1", parametersRates(formation = 2, conversion = 2, detachment = 1), root="example_tl", seed=100, n=5, max.time=3.5, time.limits = c(2.6, 3.4)) 
 ```
 
 ## Model 2
@@ -765,7 +765,7 @@ Here is a link to the figure: `r link`.
 A few examples of simulation runs for a fast model 2 (that is $R_\mathrm{repl}=2$, $R_\mathrm{conv}=2$ and $R_\mathrm{ko}=10^{16}$):
 
 ```{r M2_fast_simulations_examples, fig.width=10, fig.height=1.5}
-plotExamples("M2", parametersRates(replacement = 2, conversion = 2, knockoff = 1e16), seed=67, max.time=4) 
+plotExamples("M2", parametersRates(replacement = 2, conversion = 2, knockoff = 1e16), seed=67, max.time=4)
 ```
 
 ### Examples with time limit
@@ -773,7 +773,7 @@ plotExamples("M2", parametersRates(replacement = 2, conversion = 2, knockoff = 1
 Here are examples with more typical run time between 1.1 and 1.7 min.
 
 ```{r M2_fast_simulations_examples_time, fig.width=10, fig.height=1.5}
-plotExamples("M2", parametersRates(replacement = 2, conversion = 2, knockoff = 1e16), seed=100, n=5, max.time=3.5, time.limits = c(1.1, 1.7)) 
+plotExamples("M2", parametersRates(replacement = 2, conversion = 2, knockoff = 1e16), root="example_tl", seed=100, n=5, max.time=3.5, time.limits = c(1.1, 1.7)) 
 ```
 
 ### Examples (knock-off delay)
@@ -781,7 +781,7 @@ plotExamples("M2", parametersRates(replacement = 2, conversion = 2, knockoff = 1
 Here are examples as above, but with $R_\mathrm{ko}=1$:
 
 ```{r M2_fast_simulations_examples_ko1, fig.width=10, fig.height=1.5}
-plotExamples("M2", parametersRates(replacement = 2, conversion = 2, knockoff = 1), seed=12, max.time=16) 
+plotExamples("M2", parametersRates(replacement = 2, conversion = 2, knockoff = 1), root="example_delay", seed=12, max.time=16) 
 ```
 
 
