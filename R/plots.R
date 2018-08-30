@@ -261,7 +261,7 @@ plotDistributionGrid <- function(sim, grid.par, fixed.par, value="time", xlab="T
     #geom_text(data=m, aes(x=xlim[1], y=0.9, label=smedian))
 }
 
-plotDistributionPar <- function(selsim, xlim=c(0.2, 500), bins=50, show=10, lines=NULL, line.colour="lightblue3") {
+plotDistributionPar <- function(selsim, xlim=c(0.2, 500), ymax.log=NA, ymax.lin=NA, bins=50, show=10, lines=NULL, line.colour="lightblue3") {
   sc <- logScale(show=show)
   med <- median(selsim$time)
   
@@ -269,12 +269,14 @@ plotDistributionPar <- function(selsim, xlim=c(0.2, 500), bins=50, show=10, line
     theme_classic() +
     geom_histogram(bins=bins) +
     labs(x="Time (min)", y="Density") +
-    scale_x_log10(labels=sc$labels, breaks=sc$breaks, limits=xlim)
+    scale_x_log10(labels=sc$labels, breaks=sc$breaks, limits=xlim) +
+    ylim(0, ymax.log)
   g2 <- ggplot(selsim, aes(x=time, y=..density..)) +
     theme_classic() +
     geom_histogram(bins=bins) +
     labs(x="Time (min)", y="Density") +
-    scale_x_continuous(limits=xlim)
+    scale_x_continuous(limits=xlim) +
+    ylim(0, ymax.lin)
   if(!is.null(lines)) {
     g1 <- g1 + geom_vline(xintercept=lines, colour=line.colour, linetype="dotted")
     g1 <- g1 + geom_vline(xintercept=med, colour="orange3")
@@ -283,6 +285,38 @@ plotDistributionPar <- function(selsim, xlim=c(0.2, 500), bins=50, show=10, line
   }
   grid.arrange(g1, g2, ncol=2)
 }
+
+plotDistributionPar2 <- function(s1, s2, xlim=c(NA, NA), bins=50, show=10, alpha=0.5, lines=NULL, line.colour="lightblue3") {
+  sc <- logScale(show=show)
+  
+  s1$model <- "M1"
+  s2$model <- "M2"
+  cols <- c("model", "time")
+  s <- rbind(s1[, cols], s2[, cols])
+
+  
+  g1 <- ggplot(s, aes(x=time, y=..density.., fill=model)) +
+    theme_classic() +
+    geom_histogram(bins=bins, alpha=alpha, position="identity") +
+    labs(x="Time (min)", y="Density") +
+    scale_x_log10(labels=sc$labels, breaks=sc$breaks, limits=xlim) +
+    scale_fill_manual(values=cbPalette) +
+    theme(legend.position="none")
+  g2 <- ggplot(s, aes(x=time, y=..density.., fill=model)) +
+    theme_classic() +
+    geom_histogram(bins=bins, alpha=alpha, position="identity") +
+    labs(x="Time (min)", y="Density") +
+    scale_x_continuous(limits=xlim) +
+    scale_fill_manual(values=cbPalette)
+  if(!is.null(lines)) {
+    g1 <- g1 + geom_vline(xintercept=lines, colour=line.colour, linetype="dotted")
+    #g1 <- g1 + geom_vline(xintercept=med, colour="orange3")
+    g2 <- g2 + geom_vline(xintercept=lines, colour=line.colour, linetype="dotted")
+    #g2 <- g2 + geom_vline(xintercept=med, colour="orange3")
+  }
+  grid.arrange(g1, g2, ncol=2)
+}
+
 
 defparPlot <- function(deftime) {
   brks <- c(0.001, 0.01, 0.1, 1, 10, 100)
