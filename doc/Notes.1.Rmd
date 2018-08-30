@@ -227,3 +227,7 @@ After seeing my results Tomo requested three things:
 - incorporate Shuyu's data - 95% CI for the median of observed bi-orientation time
 
 I've done these.
+
+# 30/08/2018
+
+More plot tweaks and improvements.
