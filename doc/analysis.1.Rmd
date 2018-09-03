@@ -207,12 +207,15 @@ file <- "/home/mgierlinski/projects/kinetube/varcap_grid/varcap8_slr2_short0.2_l
 file
 ```
 
-```{r kinetube_result}
+```{r kinetube_result_original, eval=FALSE}
 kt <- read.delim(file, header=FALSE, comment="#", sep="")
 sliding.time <- kt$V7
 dropoff.time <- kt$V9
 mean.sliding.time <-  mean(sliding.time[dropoff.time == 0])
-rm(kt)
+```
+
+```{r kinetube_mean_sliding_time}
+mean.sliding.time <- 0.6655942  # copied from the above result
 ```
 
 It contains several statistics for each kinetochore, over many simulations. Among them is the total sliding time. This is not exactly what we want, as this is the accumulated time, so includes KTs that were detached and re-attached. But the simulation also recorded the total drop-off time, that is the time the KT spend while being knocked-off before being re-attached. We select only data where total drop-off time is zero, which corresponds to KTs that have not been knocked-off. The mean sliding time from this file is `r round(mean.sliding.time, 2)` minutes, which gives the conversion rate of `r round(1/mean.sliding.time, 2)` per min.
@@ -235,11 +238,16 @@ Technical note: I had to limit the queues, because all the jobs sent to c6320.q 
 
 Here is the distribution of individual conversion times (the same distribution in linear of logarithmic scale):
 
-```{r kinetube_conversion_time}
+```{r kinetube_conversion_time_raw, eval=FALSE}
 files <- dir("/home/mgierlinski/projects/kinetube/convrate", full.names=TRUE, pattern="conversions")
 kinconv <- lapply(files, function(file) read.table(file, sep="\t", header=FALSE))
 kinconv <- do.call(rbind, kinconv)
 names(kinconv) <- c("batch", "sim", "kt", "time")
+saveRDS(kinconv, file=paste0(projectDir, "kinetube/convrate.rds"))
+```
+
+```{r kinetube_converstion_time}
+kinconv <- readRDS(paste0(projectDir, "kinetube/convrate.rds"))
 ```
 
 ```{r plot_conversion_time_function}
