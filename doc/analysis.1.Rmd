@@ -243,11 +243,11 @@ files <- dir("/home/mgierlinski/projects/kinetube/convrate", full.names=TRUE, pa
 kinconv <- lapply(files, function(file) read.table(file, sep="\t", header=FALSE))
 kinconv <- do.call(rbind, kinconv)
 names(kinconv) <- c("batch", "sim", "kt", "time")
-saveRDS(kinconv, file=paste0(projectDir, "kinetube/convrate.rds"))
+saveRDS(kinconv, file="../kinetube/convrate.rds")
 ```
 
 ```{r kinetube_converstion_time}
-kinconv <- readRDS(paste0(projectDir, "kinetube/convrate.rds"))
+kinconv <- readRDS("../kinetube/convrate.rds")
 ```
 
 ```{r plot_conversion_time_function}
