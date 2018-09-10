@@ -14,7 +14,7 @@ output:
 library(knitr)
 library(kableExtra)
 library(gridExtra)
-library(ggridges)
+suppressMessages(library(ggridges))
 suppressMessages(library(viridis))
 suppressMessages(library(dplyr))
 knitr::opts_chunk$set(
@@ -583,10 +583,26 @@ ciMedian <- function(x, nboot=1000, ci=0.95) {
 ```
 
 ```{r shuyus_data}
-sh <- read.table("../analysis_V5.txt", sep="\t", header=TRUE)
-names(sh) <- c("cell", "time.s", "time.m")
-sh.ci <- ciMedian(sh$time.m, nboot=10000)
+sh8 <- read.table("../analysis_V8.txt", sep="\t", header=TRUE)
+names(sh8) <- c("cell", "time.s", "time.m")
+sh.med <- median(sh8$time.m)
+sh.ci <- ciMedian(sh8$time.m, nboot=10000)
 ```
+
+This plots shows Shuyu's data for bi-orientation time in `r nrow(sh8)` cells:
+
+```{r shuyus_data_plot, fig.width=3.5, fig.height=2}
+ggplot(sh8, aes(x=time.m)) +
+  geom_dotplot(binwidth=0.3) +
+  scale_y_continuous(name="", breaks=NULL) +
+  theme_classic() +
+  labs(x="Bi-orientation time (min)") +
+  geom_vline(xintercept = sh.med, colour="lightblue3") +
+  geom_vline(xintercept = sh.ci[1], colour="lightblue3", linetype="dotted") +
+  geom_vline(xintercept = sh.ci[2], colour="lightblue3", linetype="dotted")
+```
+
+The median is `r round(sh.med, 2)` min (solid line) and the 95% confidence intervals are [`r round(sh.ci[1], 2)`, `r round(sh.ci[2], 2)`] min (dotted lines). The confidence limits on the median were found using a bootstrap: the original data were resampled with replacement 10,000 times, median was recorded for each bootstrap and the 2.5% and 97.5% percentiles were found across all 10,000 simulated medians.
 
 
 Here we create a plot for the paper. Following our previous simulations and Vanya's paper we fix $R_\mathrm{form} = 2~\mathrm{min}^{-1}$ and $R_\mathrm{conv} = 2~\mathrm{min}^{-1}$. Shuyu's observations suggest median bi-orientation time of about 1 min. Hence, for these two fixed parameters we seek the detachment rate with the median run-time closest to 1 min.
@@ -598,13 +614,11 @@ plotBestTime(mm1.sel, "detachment", ylim=c(0.2, 200))
 
 The best parameter is $R_\mathrm{det} = 1~\mathrm{min}^{-1}$. Here is the distribution of individual run times for this parameter. The orange solid line shows the median of the distribution, while the blue dotted lines indicate 95% confidence intervals on the median bi-orientation time from Shuyu's observations.
 
-The confidence limits on the median were found using a bootstrap: the original data were resampled with replacement 10,000 times, median was recorded for each bootstrap and the 2.5% and 97.5% percentiles were found across all 10,000 simulated medians.
 
 ```{r M1_fig_runtime_distribution, fig.width=7, fig.height=3, message=FALSE, warning=FALSE}
 m1.sel <- subset(time.m1, formation==2 & conversion==2 & detachment==1)
 #g <- plotDistributionPar(m1.sel, xlim=c(0.08, 30), show=5, bins=50, lines=sh.ci)
 g <- plotDistributionPar(m1.sel, xlim=c(0.01, 30), ymax.log=1.05, ymax.lin=0.45, show=5, bins=50, lines=sh.ci)
-
 
 file <- "M1_defpar.pdf"
 pfile <- paste0(pdf.dir, file)
@@ -744,12 +758,12 @@ mm2.sel <- subset(time.m2, replacement==2 & conversion==2)
 plotBestTime(mm2.sel, "knockoff", ylim=c(0.1, 200))
 ```
 
-The best parameter is $R_\mathrm{ko} = 10^{16}~\mathrm{min}^{-1}$. Here is the distribution of individual run times for this parameter. The orange solid line shows the median of the distribution, while the blue dotted lines indicate 95% confidence intervals on the median bi-orientation time from Shuyu's observations.
+The best parameter is $R_\mathrm{ko} = 10^{16}~\mathrm{min}^{-1}$. However, Hari's in vitro experiment show that it typically takes 5-6 seconds until kinetochores detach from end-on attachment after a lateral attachment is formed. Therefore, the above results is probably not too realistic and we select $R_\mathrm{ko} = 10~\mathrm{min}^{-1}$ instead. Here is the distribution of individual run times for this parameter. The orange solid line shows the median of the distribution, while the blue dotted lines indicate 95% confidence intervals on the median bi-orientation time from Shuyu's observations.
 
 ```{r M2_fig_runtime_distribution, fig.width=7, fig.height=3}
-m2.sel <- subset(time.m2, replacement==2 & conversion==2 & knockoff==1e16)
+m2.sel <- subset(time.m2, replacement==2 & conversion==2 & knockoff==10)
 #g <- plotDistributionPar(m2.sel, xlim=c(0.01, 20), show=5, bins=50, lines=sh.ci)
-g <- plotDistributionPar(m2.sel, xlim=c(0.01, 30), ymax.log=1.05, ymax.lin=0.45, show=5, bins=50, lines=sh.ci)
+g <- plotDistributionPar(m2.sel, xlim=c(0.01, 30), ymax.log=1.05, ymax.lin=0.45, show=5, bins=50, lines=sh.ci) 
 
 file <- "M2_defpar.pdf"
 pfile <- paste0(pdf.dir, file)
@@ -764,8 +778,8 @@ Here is a link to the figure: `r link`.
 
 ```{r M1_M2_fig_runtime_distribution, fig.width=7, fig.height=3}
 m1.sel <- subset(time.m1, formation==2 & conversion==2 & detachment==1)
-m2.sel <- subset(time.m2, replacement==2 & conversion==2 & knockoff==1e16)
-g <- plotDistributionPar2(m1.sel, m2.sel, xlim=c(0.01, 30), alpha=0.6, show=5, bins=50, lines=sh.ci, line.colour="black")
+m2.sel <- subset(time.m2, replacement==2 & conversion==2 & knockoff==10)
+g <- plotDistributionPar2(m1.sel, m2.sel, xlim=c(0.01, 30), alpha=0.6, show=5, bins=50, lines=sh.ci, line.colour="black") 
 
 file <- "M1_M2_defpar.pdf"
 pfile <- paste0(pdf.dir, file)

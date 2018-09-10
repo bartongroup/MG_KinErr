@@ -231,3 +231,21 @@ I've done these.
 # 30/08/2018
 
 More plot tweaks and improvements.
+
+# 10/09/2018
+
+A request from Tomo:
+
+----
+
+We would like to make the following minor modifications to the 'Simple model'.
+
+1) In Hari's in vitro experiment, it typically takes 5-6 seconds until kinetochores detach from end-on attachment after a lateral attachment is formed. This suggests infinite R-knock-off (in Model 2) may not be realistic but R-knock-off=10 is more realistic.
+
+2) Shuyu has revised time for bi-oientation in 6 cells where bi-orientation was only transiently observed. She also added one more cell to her data. Her revised dataset is attached. You can find time required for bi-orientatioj in 63 cells in Sheet 1 of the attached Excel file (column B in seconds, column C in minutes).
+
+I wonder if you could implement these changes to your model.
+
+----
+
+I've done this and updated the document.
