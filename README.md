@@ -19,7 +19,7 @@ Then, use snakemake to perform all the necessary computations on the cluster:
 snakemake -c "qsub -V -cwd -o snakelog -e snakelog -pe smp {threads}" --jobs=100
 ```
 
-Finally, knit the main document. 
+Next, edit the `R/setup.R` file and modify the home project directory (in our case it is on a remote system). Finally, knit the main document. 
 
 ```
 rmarkdown::render("doc/analysis.1.Rmd")
