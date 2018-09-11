@@ -251,7 +251,7 @@ kinconv <- readRDS("../kinetube/convrate.rds")
 ```
 
 ```{r plot_conversion_time_function}
-plotConverstionTimeDistribution <- function(kinconv, log.scale=TRUE) {
+plotConversionTimeDistribution <- function(kinconv, log.scale=TRUE) {
   brks <- c(0.001, 0.01, 0.1, 1, 10)
   g <- ggplot(kinconv) +
     theme_classic() +
@@ -266,8 +266,8 @@ plotConverstionTimeDistribution <- function(kinconv, log.scale=TRUE) {
 ```{r conversion_time_distribution, fig.width=8, fig.height=3}
 mean.conv <- mean(kinconv$time)
 conv.rate <- 1 / mean.conv
-g1 <- plotConverstionTimeDistribution(kinconv, log.scale=FALSE)
-g2 <- plotConverstionTimeDistribution(kinconv, log.scale=TRUE)
+g1 <- plotConversionTimeDistribution(kinconv, log.scale=FALSE)
+g2 <- plotConversionTimeDistribution(kinconv, log.scale=TRUE)
 grid.arrange(g1, g2, ncol=2)
 ```
 
@@ -635,7 +635,7 @@ ggsave(pfile, plot=g, device="pdf")
 link <- paste0("[PDF](", public_html, "pdf/", file, ")") 
 ```
 
-Here is a link to the figure: `r link`.
+Here is a link to the figure: `r link`. The median of this distribution is  `r sprintf("%4.2f", median(m1.sel$time))`.
 
 ### Examples
 
@@ -780,7 +780,7 @@ ggsave(pfile, plot=g, device="pdf")
 link <- paste0("[PDF](", public_html, "pdf/", file, ")") 
 ```
 
-Here is a link to the figure: `r link`.
+Here is a link to the figure: `r link`. The median of this distribution is  `r sprintf("%4.2f", median(m2.sel$time))`.
 
 ### Best parameters distribution plot: comparison
 
@@ -811,7 +811,7 @@ plotExamples("M2", parametersRates(replacement = 2, conversion = 2, knockoff = 1
 Here are examples with more typical run time between 1.1 and 1.7 min.
 
 ```{r M2_fast_simulations_examples_time, fig.width=10, fig.height=1.5}
-plotExamples("M2", parametersRates(replacement = 2, conversion = 2, knockoff = 1e16), root="example_tl", seed=100, n=5, max.time=3.5, time.limits = c(1.1, 1.7)) 
+plotExamples("M2", parametersRates(replacement = 2, conversion = 2, knockoff = 10), root="example_tl", seed=100, n=5, max.time=3.5, time.limits = c(1.5, 2.1)) 
 ```
 
 ### Examples (knock-off delay)
@@ -957,38 +957,68 @@ myKable(msum)
 The model described in this document simulates error correction for one chromosome (sister chromatids). In yeast, we have 16 chromosomes. What is the total time required to correct all chromosomes and establish proper bi-orientation? If error correction for all of them is done in parallel, then the total time is the longest of the individual times. We can model this by randomly sampling 16 timelines from our simulation results and finding the maximum time. NOTE: this is a very conservative approach assuming that *all* chromosomes start in an erroneous configuration.
 
 ```{r max_16_chromosomes_function}
-maxChromosomes <- function(sim, pars, n.chromosomes=16, n.boot=1000, n.cores=7) {
+maxChromosomes <- function(sim, pars, n.chromosomes=16, n.boot=10000, n.cores=7) {
   for(p in names(pars)) {
     val <- pars[[p]]
     sim <- sim[sim[[p]] == val,]
   }
   d <- mclapply(1:n.boot, function(i) {
-    sample(sim$time, n.chromosomes)
-  }, mc.cores = n.cores)
+    max(sample(sim$time, n.chromosomes))
+  }, mc.cores=n.cores)
   unlist(d)
 }
 
-plotMaxChromosomes <- function(sim, model, pars) {
-  brks <- c(0.01, 0.1, 1, 10, 100)
-  m1.max <- maxChromosomes(sim, pars)
+plotMaxChromosomes <- function(mxc, model) {
+  brks <- c(1, 2, 5, 10, 20, 50, 100)
   #breaks <- seq(0, 25, 0.5)
-  ggplot(data.frame(x=m1.max)) +
-    geom_histogram(aes(x=x, y=..density..), bins=60) +
+  ggplot(data.frame(x=mxc)) +
+    theme_classic() +
+    geom_histogram(aes(x=x, y=..density..), bins=40) +
     labs(title=paste("Model", model), x="Max time (min)", y="Density") +
-    scale_x_log10(breaks=brks, labels=brks, limits=c(0.1,50))
+    scale_x_log10(breaks=brks, labels=brks, limits=c(1,50))
 }
 ```
 
 We select data with the following (default) parameters (units are 1 / minute).
 
-- M1: $R_\mathrm{form} = 1$, $R_\mathrm{conv} = 2$, $R_\mathrm{det} = 1$
-- M2: $R_\mathrm{repl} = 1$, $R_\mathrm{conv} = 2$, $R_\mathrm{ko} = 10$
+- M1: $R_\mathrm{form} = 2$, $R_\mathrm{conv} = 2$, $R_\mathrm{det} = 1$
+- M2: $R_\mathrm{repl} = 2$, $R_\mathrm{conv} = 2$, $R_\mathrm{ko} = 10$
 
 These plots show the distribution of the maximum time across 16 randomly selected samples:
 
-```{r M1_max_chr, fig.width=6, fig.height=3}
-g1 <- plotMaxChromosomes(time.m1, "M1", list(formation=1, conversion=2, detachment=1))
-g2 <- plotMaxChromosomes(time.m2, "M2", list(replacement=1, conversion=2, knockoff=10))
+```{r max_chromosomes}
+mxc1 <- maxChromosomes(time.m1, list(formation=2, conversion=2, detachment=1))
+mxc2 <- maxChromosomes(time.m2, list(replacement=2, conversion=2, knockoff=10))
+```
+
+```{r max_chromosomes_plot, fig.width=6, fig.height=3}
+g1 <- plotMaxChromosomes(mxc1, "M1")
+g2 <- plotMaxChromosomes(mxc2, "M2")
 grid.arrange(g1, g2, ncol=2)
 ```
 
+```{r max_chr_perc_func}
+maxChrLimits <- function(mxc, lims = c(10, 20, 30, 40, 50)) {
+  frc <- unlist(lapply(lims, function(lim) {
+    length(which(mxc > lim)) / length(mxc)
+  }))
+  data.frame(
+    limit = lims,
+    percentage = 100*frc
+  )
+}
+```
+
+Percentage of maximum time greater than the limit for model 1:
+
+```{r m1_max_chr_perc}
+mxp1 <- maxChrLimits(mxc1)
+myKable(mxp1, digits=3) 
+```
+
+and for model 2:
+
+```{r m2_max_chr_perc}
+mxp2 <- maxChrLimits(mxc2)
+myKable(mxp2, digits=3) 
+```

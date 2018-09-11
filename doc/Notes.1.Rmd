@@ -249,3 +249,20 @@ I wonder if you could implement these changes to your model.
 ----
 
 I've done this and updated the document.
+
+
+# 11/09/2018
+
+More from Tomo:
+
+----
+
+1) Could you tell me the final median time in Model 1 and 2, which is represented by an orange line on 'Best parameters distribution plot’. According to the heat maps, the median time should be about 3.0 and 1.8 min for Model 1 and 2, respectively. If possible please tell me the median time with the 2nd decimal number. However, if the 2nd decimal number is not significant, please just confirm median values with the 1st decimal number.
+
+2) It will be great if you could update ‘Examples with time limit’ for Model 2 with R-ko=10. This time, I suggest time range 1.5-2.1 min.
+
+3) It will also be great if you could update ’16 chromosomes’ section using the updated parameter values for Model 1 and 2, i.e. R-form = R-repl = 2. In that section, could you also estimate a fraction exceeding 10, 20, 30, 40 and 50 min, in Model 1 and 2 (this is interesting as there is some relevant in vivo data available to compare)?
+
+----
+
+Oops. I discovered that the 16 chromosomes calculation was incorrect. It showed all the times, not max of 16. Now it is corrected.
