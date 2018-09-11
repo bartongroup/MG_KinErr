@@ -808,7 +808,7 @@ plotExamples("M2", parametersRates(replacement = 2, conversion = 2, knockoff = 1
 
 ### Examples with time limit
 
-Here are examples with more typical run time between 1.1 and 1.7 min.
+Here are examples with more typical run time between 1.5 and 2.1 min.
 
 ```{r M2_fast_simulations_examples_time, fig.width=10, fig.height=1.5}
 plotExamples("M2", parametersRates(replacement = 2, conversion = 2, knockoff = 10), root="example_tl", seed=100, n=5, max.time=3.5, time.limits = c(1.5, 2.1)) 
