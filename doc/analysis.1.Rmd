@@ -1022,3 +1022,23 @@ and for model 2:
 mxp2 <- maxChrLimits(mxc2)
 myKable(mxp2, digits=3) 
 ```
+
+### Run-time fractions for 1 chromosome
+
+And here, for comparison, we have the same tables, but calculated for just one chromosome.
+
+Model 1:
+
+```{r m1_1_chr_perc}
+t1 <- subset(time.m1, formation==2 & conversion==2 & detachment==1)
+mxp1 <- maxChrLimits(t1$time)
+myKable(mxp1, digits=3) 
+```
+
+and for model 2:
+
+```{r m2_1_chr_perc}
+t2 <- subset(time.m2, replacement==2 & conversion==2 & knockoff==10)
+mxp2 <- maxChrLimits(t2$time)
+myKable(mxp2, digits=3) 
+```
