@@ -273,9 +273,9 @@ g <- grid.arrange(g1, g2, ncol=2)
 link <- pdfFigure(g, "convrate.pdf")
 ```
 
-The mean conversion time is `r round(mean.conv, 3)` min, which gives conversion rate of `r round(conv.rate, 2)` per min.
+Link to the figure: `r link`.
 
-Links to the figure: `r link`.
+The mean conversion time is `r round(mean.conv, 3)` min, which gives conversion rate of `r round(conv.rate, 2)` per min.
 
 ## Tests
 
