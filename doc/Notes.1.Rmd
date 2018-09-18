@@ -270,3 +270,5 @@ Oops. I discovered that the 16 chromosomes calculation was incorrect. It showed 
 # 18/09/2018
 
 New PDF figures for the paper.
+
+Meeting with Tomo: we need a new figure. Shuyu's data binned in 1-min bins with error bars and both models for comparison. Some statistical test? KS?

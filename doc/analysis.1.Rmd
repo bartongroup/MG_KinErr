@@ -795,6 +795,63 @@ link <- pdfFigure(g, "M1_M2_defpar.pdf")
 
 Here is a link to the figure: `r link`.
 
+### Comparison to Shuyu's data
+
+```{r ci_prop}
+propCI <- function(s, n, alpha=0.95) {
+  Z <- -qnorm((1 - alpha)/2)
+  pp <- (s + Z^2/2) / (n + Z^2)
+  w <- Z * sqrt(pp * (1 - pp) / (n + Z^2))
+data.frame(
+    p = s / n,
+    lo = pp - w,
+    up = pp + w
+  )
+}
+```
+
+```{r bin_shuyus_data}
+range <- 0:8
+sh8.bin <- table(cut(sh8$time.m, range))
+sh8.bin <- data.frame(
+  mid.time = range[-1] - 0.5,
+  count = as.integer(sh8.bin)
+)
+n <- sum(sh8.bin$count)
+sh8.prop <- propCI(sh8.bin$count, n, alpha = 0.68)
+sh8.bin <- cbind(sh8.bin, sh8.prop)
+sh8.bin[sh8.bin$lo < 0, "lo"] <- 0
+```
+
+```{r bin_models}
+m1.bin <- as.numeric(table(cut(m1.sel$time, range)))
+m2.bin <- as.numeric(table(cut(m2.sel$time, range)))
+m.bin <- data.frame(
+  x = range[-1],
+  m1 = m1.bin / nrow(m1.sel),
+  m2 = m2.bin / nrow(m2.sel)
+)
+sh8.bin <- cbind(sh8.bin, m.bin)
+```
+
+Here is a combined histogram of Shuyu's data, orange and blue lines show M1 and M2. Wrror bars are 68% confidence intervals of a proportion, which is the nearest representation of standard errors, but with asymmetry. When comparing model and data standard errors are appropriate as a measure of the distance between data and model. The distance between a data point and the model expressed in standard errors is a Z-score.
+
+```{r shuyu_comparison_figure, fig.width=4, fig.height=3}
+g <- ggplot(sh8.bin) +
+  theme_classic() +
+  geom_step(aes(x=mid.time-0.5, y=m1), stat="identity", colour="orange") +
+  geom_step(aes(x=mid.time-0.5, y=m2), stat="identity", colour="lightblue2") +
+  geom_point(aes(x=mid.time, y=p)) +
+  geom_errorbar(aes(x=mid.time, ymin=lo, ymax=up), width=0.2) +
+  scale_x_continuous(breaks=0:10, limits=c(0,7), expand=c(0,0)) +
+  scale_y_continuous(expand=c(0,0)) +
+  labs(x="Time (min)", y="Density")
+g
+link <- pdfFigure(g, "M1_M2_Shuyu.pdf")
+```
+
+Here is a link to the figure: `r link`.
+
 ### Examples (instant knock-off)
 
 A few examples of simulation runs for a fast model 2 (that is $R_\mathrm{repl}=2$, $R_\mathrm{conv}=2$ and $R_\mathrm{ko}=10^{16}$):
