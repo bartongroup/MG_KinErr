@@ -263,15 +263,19 @@ plotConversionTimeDistribution <- function(kinconv, log.scale=TRUE) {
 ```
 
 
-```{r conversion_time_distribution, fig.width=8, fig.height=3}
+```{r conversion_time_distribution, fig.width=8, fig.height=3, message=FALSE, warning=FALSE}
 mean.conv <- mean(kinconv$time)
 conv.rate <- 1 / mean.conv
 g1 <- plotConversionTimeDistribution(kinconv, log.scale=FALSE)
 g2 <- plotConversionTimeDistribution(kinconv, log.scale=TRUE)
-grid.arrange(g1, g2, ncol=2)
+g <- grid.arrange(g1, g2, ncol=2)
+
+link <- pdfFigure(g, "convrate.pdf")
 ```
 
 The mean conversion time is `r round(mean.conv, 3)` min, which gives conversion rate of `r round(conv.rate, 2)` per min.
+
+Links to the figure: `r link`.
 
 ## Tests
 
@@ -617,8 +621,13 @@ Here we create a plot for the paper. Following our previous simulations and Vany
 
 ```{r M1_fig_best_parameters_search, fig.width=3, fig.height=3}
 mm1.sel <- subset(time.m1, formation==2 & conversion==2)
-plotBestTime(mm1.sel, "detachment", ylim=c(0.2, 200))
+g <- plotBestTime(mm1.sel, "detachment", ylim=c(0.2, 200))
+g
+
+link <- pdfFigure(g, "M1_best_time.pdf")
 ```
+
+Link to the figure: `r link`.
 
 The best parameter is $R_\mathrm{det} = 1~\mathrm{min}^{-1}$. Here is the distribution of individual run times for this parameter. The orange solid line shows the median of the distribution, while the blue dotted lines indicate 95% confidence intervals on the median bi-orientation time from Shuyu's observations.
 
@@ -628,11 +637,7 @@ m1.sel <- subset(time.m1, formation==2 & conversion==2 & detachment==1)
 #g <- plotDistributionPar(m1.sel, xlim=c(0.08, 30), show=5, bins=50, lines=sh.ci)
 g <- plotDistributionPar(m1.sel, xlim=c(0.01, 30), ymax.log=1.05, ymax.lin=0.45, show=5, bins=50, lines=sh.ci)
 
-file <- "M1_defpar.pdf"
-pfile <- paste0(pdf.dir, file)
-ggsave(pfile, plot=g, device="pdf")
-
-link <- paste0("[PDF](", public_html, "pdf/", file, ")") 
+link <- pdfFigure(g, "M1_defpar.pdf")
 ```
 
 Here is a link to the figure: `r link`. The median of this distribution is  `r sprintf("%4.2f", median(m1.sel$time))`.
@@ -773,11 +778,7 @@ m2.sel <- subset(time.m2, replacement==2 & conversion==2 & knockoff==10)
 #g <- plotDistributionPar(m2.sel, xlim=c(0.01, 20), show=5, bins=50, lines=sh.ci)
 g <- plotDistributionPar(m2.sel, xlim=c(0.01, 30), ymax.log=1.05, ymax.lin=0.45, show=5, bins=50, lines=sh.ci) 
 
-file <- "M2_defpar.pdf"
-pfile <- paste0(pdf.dir, file)
-ggsave(pfile, plot=g, device="pdf")
-
-link <- paste0("[PDF](", public_html, "pdf/", file, ")") 
+link <- pdfFigure(g, "M2_defpar.pdf")
 ```
 
 Here is a link to the figure: `r link`. The median of this distribution is  `r sprintf("%4.2f", median(m2.sel$time))`.
@@ -789,11 +790,7 @@ m1.sel <- subset(time.m1, formation==2 & conversion==2 & detachment==1)
 m2.sel <- subset(time.m2, replacement==2 & conversion==2 & knockoff==10)
 g <- plotDistributionPar2(m1.sel, m2.sel, xlim=c(0.01, 30), alpha=0.6, show=5, bins=50, lines=sh.ci, line.colour="black") 
 
-file <- "M1_M2_defpar.pdf"
-pfile <- paste0(pdf.dir, file)
-ggsave(pfile, plot=g, device="pdf")
-
-link <- paste0("[PDF](", public_html, "pdf/", file, ")") 
+link <- pdfFigure(g, "M1_M2_defpar.pdf")
 ```
 
 Here is a link to the figure: `r link`.

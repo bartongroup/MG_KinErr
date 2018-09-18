@@ -341,3 +341,11 @@ defparRidgePlot <- function(deftime, log.scale=TRUE, limits=NULL) {
   g
 }
 
+pdfFigure <- function(g, file, width=5, height=5) {
+  pfile <- paste0(pdf.dir, file)
+  ggsave(pfile, plot=g, device="pdf", width=NA, height=NA, units="in")
+  
+  link <- paste0("[PDF](", public_html, "pdf/", file, ")") 
+}
+
+
