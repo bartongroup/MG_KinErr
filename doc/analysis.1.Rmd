@@ -834,7 +834,7 @@ m.bin <- data.frame(
 sh8.bin <- cbind(sh8.bin, m.bin) 
 ```
 
-Here is a combined histogram of Shuyu's data (grey bars), and the models (dark orange and blue lines show M1 and M2, respectively), aggregated at a bin size of 1 min. Error bars are 68% confidence intervals of a proportion, representing asymmetric standar error. When comparing model with data standard errors are appropriate as a measure of the distance between data and the model. Then, the distance between a data point and the model line expressed in error bars is a Z-score.
+Here is a combined histogram of Shuyu's data (grey bars), and the models (dark orange and blue lines show M1 and M2, respectively), aggregated at a bin size of 1 min. Error bars are 68% confidence intervals of a proportion, representing asymmetric standard error. When comparing model with data standard errors are appropriate as a measure of the distance between data and the model. Then, the distance between a data point and the model line expressed in error bars is a Z-score.
 
 ```{r shuyu_comparison_figure, fig.width=4, fig.height=3}
 g <- ggplot(sh8.bin) +
@@ -867,7 +867,7 @@ myKable(df, col.names = c("Model", "p-value"))
 
 Model 1 is significantly different from Shuyu's data, while the null hypothesis about model 2 (data and model come from the same distribution) cannot be rejected.
 
-Note: because of the presence of ties (that is, in Shuyu's data there are multiple measurements with the same time), the p-values are approximate, though because we have large samples, approximations w should be good.
+Note: because of the presence of ties (that is, in Shuyu's data there are multiple measurements with the same time), the p-values are approximate, though because we have large samples, approximations should be good.
 
 ### Examples (instant knock-off)
 
