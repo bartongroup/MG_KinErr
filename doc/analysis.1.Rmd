@@ -818,7 +818,7 @@ sh8.bin <- data.frame(
   count = as.integer(sh8.bin)
 )
 n <- sum(sh8.bin$count)
-sh8.prop <- propCI(sh8.bin$count, n, alpha = 0.68)
+sh8.prop <- propCI(sh8.bin$count, n, alpha = 2*(pnorm(1) - 0.5))
 sh8.bin <- cbind(sh8.bin, sh8.prop)
 sh8.bin[sh8.bin$lo < 0, "lo"] <- 0
 ```
@@ -831,26 +831,43 @@ m.bin <- data.frame(
   m1 = m1.bin / nrow(m1.sel),
   m2 = m2.bin / nrow(m2.sel)
 )
-sh8.bin <- cbind(sh8.bin, m.bin)
+sh8.bin <- cbind(sh8.bin, m.bin) 
 ```
 
-Here is a combined histogram of Shuyu's data, orange and blue lines show M1 and M2. Wrror bars are 68% confidence intervals of a proportion, which is the nearest representation of standard errors, but with asymmetry. When comparing model and data standard errors are appropriate as a measure of the distance between data and model. The distance between a data point and the model expressed in standard errors is a Z-score.
+Here is a combined histogram of Shuyu's data (grey bars), and the models (dark orange and blue lines show M1 and M2, respectively), aggregated at a bin size of 1 min. Error bars are 68% confidence intervals of a proportion, representing asymmetric standar error. When comparing model with data standard errors are appropriate as a measure of the distance between data and the model. Then, the distance between a data point and the model line expressed in error bars is a Z-score.
 
 ```{r shuyu_comparison_figure, fig.width=4, fig.height=3}
 g <- ggplot(sh8.bin) +
   theme_classic() +
-  geom_step(aes(x=mid.time-0.5, y=m1), stat="identity", colour="orange") +
-  geom_step(aes(x=mid.time-0.5, y=m2), stat="identity", colour="lightblue2") +
-  geom_point(aes(x=mid.time, y=p)) +
-  geom_errorbar(aes(x=mid.time, ymin=lo, ymax=up), width=0.2) +
+  geom_col(aes(x=mid.time, y=p), fill="grey80", colour="grey50", width=1) +
+  geom_step(aes(x=mid.time-0.5, y=m1), stat="identity", colour="darkgoldenrod4", size=0.8) +
+  geom_step(aes(x=mid.time-0.5, y=m2), stat="identity", colour="dodgerblue4", size=0.8) +
+  #geom_point(aes(x=mid.time, y=p)) +
+  geom_errorbar(aes(x=mid.time, ymin=lo, ymax=up), width=0.2, colour="grey50") +
   scale_x_continuous(breaks=0:10, limits=c(0,7), expand=c(0,0)) +
   scale_y_continuous(expand=c(0,0)) +
-  labs(x="Time (min)", y="Density")
+  labs(x="Bi-orientation time (min)", y="Density")
 g
-link <- pdfFigure(g, "M1_M2_Shuyu.pdf")
+link <- pdfFigure(g, "M1_M2_Shuyu.pdf", width=4, height=3) 
 ```
 
 Here is a link to the figure: `r link`.
+
+We can use the Kolmogorov-Smirnov test to compare both our models with the observed data. Here are the results:
+
+```{r M1_M2_Shuyu_KS}
+ks1 <- ks.test(m1.sel$time, sh8$time.m)
+ks2 <- ks.test(m2.sel$time, sh8$time.m)
+df <- data.frame(
+  model = c("M1", "M2"),
+  p.value = sprintf("%.2g", c(ks1$p.value, ks2$p.value))
+)
+myKable(df, col.names = c("Model", "p-value"))
+```
+
+Model 1 is significantly different from Shuyu's data, while the null hypothesis about model 2 (data and model come from the same distribution) cannot be rejected.
+
+Note: because of the presence of ties (that is, in Shuyu's data there are multiple measurements with the same time), the p-values are approximate, though because we have large samples, approximations w should be good.
 
 ### Examples (instant knock-off)
 
