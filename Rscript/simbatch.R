@@ -6,8 +6,11 @@
 # M2: replacement_rate knockoff_rate conversion_rate dummy
 
 
-source("R/setup.R")
+#source("R/setup.R")
 source("R/lib.R")
+library(parallel)
+library(methods)
+library(data.table)
 
 simulationRuns <- function(model, par, nsim, ncores) {
   T <- mclapply(1:nsim, function(i) {

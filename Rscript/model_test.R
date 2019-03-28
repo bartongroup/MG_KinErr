@@ -1,8 +1,10 @@
 # testing model
 
-source("R/setup.R")
+#source("R/setup.R")
 source("R/lib.R")
 source("R/tests.R")
+library(methods)
+library(parallel)
 
 args <- commandArgs(TRUE)
 code <- as.numeric(args[1])
