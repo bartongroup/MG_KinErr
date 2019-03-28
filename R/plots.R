@@ -348,4 +348,10 @@ pdfFigure <- function(g, file, width=NA, height=NA) {
   link <- paste0("[PDF](", public_html, "pdf/", file, ")") 
 }
 
+figData <- function(d, file) {
+  dfile <- paste0(figdata.dir, file)
+  write.csv(d, dfile, quote=FALSE, sep=",", row.names=FALSE)
+  
+  link <- paste0("[source data](", public_html, "figdata/", file, ")") 
+}
 

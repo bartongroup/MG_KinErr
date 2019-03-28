@@ -57,6 +57,8 @@ source("../R/plots.R")
 source("../R/tests.R") 
 pdf.dir <- paste0(projectDir, "pdf/")
 if(!dir.exists(pdf.dir)) dir.create(pdf.dir)
+figdata.dir <- paste0(projectDir, "figdata/")
+if(!dir.exists(figdata.dir)) dir.create(figdata.dir)
 ```
 
 # {.tabset}
@@ -271,9 +273,14 @@ g2 <- plotConversionTimeDistribution(kinconv, log.scale=TRUE)
 g <- grid.arrange(g1, g2, ncol=2)
 
 link <- pdfFigure(g, "convrate.pdf")
+
+fd <- data.frame(time = round(kinconv$time, 3))
+dlink <- figData(fd, "kinconv.csv")
 ```
 
 Link to the figure: `r link`.
+
+Link to `r dlink`.
 
 The mean conversion time is `r round(mean.conv, 3)` min, which gives conversion rate of `r round(conv.rate, 2)` per min.
 
@@ -625,9 +632,15 @@ g <- plotBestTime(mm1.sel, "detachment", ylim=c(0.2, 200))
 g
 
 link <- pdfFigure(g, "M1_best_time.pdf")
+
+fd <- setNames(mm1.sel[, c("detachment", "time")], c("Detachment_rate", "Time"))
+fd$Time <- signif(fd$Time, 4)
+dlink <- figData(fd, "m1_best_params.csv")
 ```
 
 Link to the figure: `r link`.
+
+Link to `r dlink`.
 
 The best parameter is $R_\mathrm{det} = 1~\mathrm{min}^{-1}$. Here is the distribution of individual run times for this parameter. The orange solid line shows the median of the distribution, while the blue dotted lines indicate 95% confidence intervals on the median bi-orientation time from Shuyu's observations.
 
@@ -791,9 +804,20 @@ m2.sel <- subset(time.m2, replacement==2 & conversion==2 & knockoff==10)
 g <- plotDistributionPar2(m1.sel, m2.sel, xlim=c(0.01, 30), alpha=0.6, show=5, bins=50, lines=sh.ci, line.colour="black") 
 
 link <- pdfFigure(g, "M1_M2_defpar.pdf")
+
+fd <- data.frame(
+  Model = c(rep("M1", nrow(m1.sel)), rep("M2", nrow(m2.sel))),
+  Time = signif(c(m1.sel$time, m2.sel$time), 4)
+)
+dlink <- figData(fd, "m1_m2_best_comparison.csv")
+
+fsh <- data.frame(Cell=sh8$cell, Time=round(sh8$time.m, 2))
+slink <- figData(fsh, "cell_data.csv")
 ```
 
 Here is a link to the figure: `r link`.
+
+Here is a link to `r dlink` and additional `r slink` for Shuyu's data (required to calculated median confidence interval).
 
 ### Comparison to Shuyu's data
 
@@ -848,10 +872,16 @@ g <- ggplot(sh8.bin) +
   scale_y_continuous(expand=c(0,0)) +
   labs(x="Bi-orientation time (min)", y="Density")
 g
-link <- pdfFigure(g, "M1_M2_Shuyu.pdf", width=4, height=3) 
+link <- pdfFigure(g, "M1_M2_Shuyu.pdf", width=4, height=3)
+
+fd <- sh8.bin[,-6]
+fd <- setNames(fd, c("Mid_time", "Count", "Proportion", "Prop.lower", "Prop.upper", "Model_1", "Model_2"))
+dlink <- figData(fd, "model_comparison_binned.csv")
 ```
 
 Here is a link to the figure: `r link`.
+
+Here is a link to `r dlink`.
 
 We can use the Kolmogorov-Smirnov test to compare both our models with the observed data. Here are the results:
 
